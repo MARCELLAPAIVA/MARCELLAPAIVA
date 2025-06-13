@@ -109,65 +109,76 @@ export default function ManageProductsPage() {
 
         {products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product.id} className="bg-card border-border flex flex-col justify-between shadow-lg">
-                <CardHeader className="p-0 relative aspect-[16/10]">
-                  {product.imageBase64 && (
-                    <Image
-                      src={product.imageBase64}
-                      alt={product.description.substring(0,30) || "Imagem do produto"}
-                      fill
-                      className="object-cover w-full h-full rounded-t-lg"
-                      data-ai-hint="product tobacco accessory"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                  )}
-                </CardHeader>
-                <CardContent className="p-4 flex-grow">
-                  <CardTitle className="text-lg font-headline text-primary mb-1 line-clamp-1">
-                     {product.description.substring(0, 30)}{product.description.length > 30 ? '...' : ''}
-                  </CardTitle>
-                  <p className="text-2xl font-bold text-foreground mb-2">
-                    {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </p>
-                  <CardDescription className="text-card-foreground/80 font-body text-sm line-clamp-3">
-                    {product.description}
-                  </CardDescription>
-                </CardContent>
-                <CardFooter className="p-4 flex justify-end items-center space-x-2 border-t border-border mt-auto">
-                  {/* Edit button - non-functional for now */}
-                  <Button variant="outline" size="icon" disabled className="border-primary text-primary hover:bg-primary/10">
-                    <Edit3 size={18} />
-                    <span className="sr-only">Editar</span>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="icon">
-                        <Trash2 size={18} />
-                        <span className="sr-only">Remover</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-primary">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="font-headline text-foreground">Confirmar Exclusão</AlertDialogTitle>
-                        <AlertDialogDescription className="text-card-foreground">
-                          Tem certeza que deseja remover o produto "{product.description.substring(0,20)}{product.description.length > 20 ? '...' : ''}"? Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="border-muted-foreground hover:bg-muted/20">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleDelete(product.id, product.description.substring(0,20))}
-                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                        >
-                          Confirmar
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardFooter>
-              </Card>
-            ))}
+            {products.map((product) => {
+              const safeDescription = product.description || "Descrição não disponível";
+              const truncatedDescription = safeDescription.substring(0, 30) + (safeDescription.length > 30 ? '...' : '');
+              const altText = (product.description || "Imagem do produto").substring(0,50);
+              const productNameForToast = (product.description || "Produto selecionado").substring(0,20);
+              const productNameForDialog = (product.description || "este produto").substring(0,20);
+
+
+              return (
+                <Card key={product.id} className="bg-card border-border flex flex-col justify-between shadow-lg">
+                  <CardHeader className="p-0 relative aspect-[16/10]">
+                    {product.imageBase64 && (
+                      <Image
+                        src={product.imageBase64}
+                        alt={altText}
+                        fill
+                        className="object-cover w-full h-full rounded-t-lg"
+                        data-ai-hint="product tobacco accessory"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-4 flex-grow">
+                    <CardTitle className="text-lg font-headline text-primary mb-1 line-clamp-1">
+                       {truncatedDescription}
+                    </CardTitle>
+                    <p className="text-2xl font-bold text-foreground mb-2">
+                      {typeof product.price === 'number' 
+                        ? product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                        : 'Preço não definido'}
+                    </p>
+                    <CardDescription className="text-card-foreground/80 font-body text-sm line-clamp-3">
+                      {safeDescription}
+                    </CardDescription>
+                  </CardContent>
+                  <CardFooter className="p-4 flex justify-end items-center space-x-2 border-t border-border mt-auto">
+                    {/* Edit button - non-functional for now */}
+                    <Button variant="outline" size="icon" disabled className="border-primary text-primary hover:bg-primary/10">
+                      <Edit3 size={18} />
+                      <span className="sr-only">Editar</span>
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                          <Trash2 size={18} />
+                          <span className="sr-only">Remover</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border-primary">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="font-headline text-foreground">Confirmar Exclusão</AlertDialogTitle>
+                          <AlertDialogDescription className="text-card-foreground">
+                            Tem certeza que deseja remover o produto "{productNameForDialog}{safeDescription.length > 20 ? '...' : ''}"? Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="border-muted-foreground hover:bg-muted/20">Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDelete(product.id, productNameForToast)}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          >
+                            Confirmar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         )}
       </section>
