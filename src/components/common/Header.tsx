@@ -48,7 +48,7 @@ export default function Header() {
               <li>
                 <Link href="/login" className="flex items-center text-foreground hover:text-primary transition-colors font-medium">
                    <LogIn size={18} className="mr-1.5"/>
-                  Login Admin
+                  Acesso Admin
                 </Link>
               </li>
             )}
