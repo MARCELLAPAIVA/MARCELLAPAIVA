@@ -21,8 +21,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Hardcoded users for prototype purposes
 const ALLOWED_USERS = [
-  { username: 'admin1', password: 'password123' },
-  { username: 'admin2', password: 'password456' },
+  { username: 'MVP', password: '101416Saka' },
+  { username: 'MSP', password: 'Royal2025' },
 ];
 
 const AUTH_STORAGE_KEY = 'mtTabacariaAuthUser';
@@ -96,3 +96,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
