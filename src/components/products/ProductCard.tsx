@@ -14,14 +14,16 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { user } = useAuth();
-  const productName = product.description.substring(0, 40) + (product.description.length > 40 ? "..." : "");
+  const safeDescription = product.description || "Nome do produto indisponível";
+  const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
+  const altText = safeDescription.substring(0,50);
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden">
         <Image
           src={product.imageBase64 || "https://placehold.co/400x400.png"}
-          alt={productName || "Imagem do Produto"}
+          alt={altText}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-cover"
@@ -33,9 +35,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           {productName}
         </p>
         {user ? (
-          <p className="font-headline text-lg text-primary font-semibold">
-            {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </p>
+          typeof product.price === 'number' ? (
+            <p className="font-headline text-lg text-primary font-semibold">
+              {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+          ) : (
+            <p className="font-headline text-sm text-muted-foreground">Preço não disponível</p>
+          )
         ) : (
           <div className="text-center">
             <p className="text-xs text-muted-foreground mb-1">Preço sob consulta</p>
