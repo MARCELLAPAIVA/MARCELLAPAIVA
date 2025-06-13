@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -57,7 +58,7 @@ export default function ProductForm() {
         toast({
           title: "Sucesso!",
           description: "Produto adicionado com sucesso.",
-          variant: "default",
+          variant: "default", // Default toast uses new theme colors
         });
         form.reset();
         setImagePreview(null);
@@ -82,7 +83,7 @@ export default function ProductForm() {
   }, [imageFile]);
 
   const clearImage = () => {
-    form.setValue("image", undefined as any, { shouldValidate: true }); // Using 'as any' to bypass FileList type for reset
+    form.setValue("image", undefined as any, { shouldValidate: true }); 
     setImagePreview(null);
   };
 
@@ -95,7 +96,7 @@ export default function ProductForm() {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-primary font-headline text-lg">Descrição do Produto</FormLabel>
+              <FormLabel className="text-foreground font-headline text-lg">Descrição do Produto</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Detalhes sobre o produto, material, origem, etc."
@@ -114,7 +115,7 @@ export default function ProductForm() {
           name="image"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-primary font-headline text-lg">Imagem do Produto</FormLabel>
+              <FormLabel className="text-foreground font-headline text-lg">Imagem do Produto</FormLabel>
               <FormControl>
                 <div className="flex flex-col items-center space-y-4">
                   <Input
@@ -156,7 +157,7 @@ export default function ProductForm() {
           </div>
         )}
 
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3" disabled={form.formState.isSubmitting}>
+        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? "Adicionando..." : "Adicionar Produto"}
         </Button>
       </form>

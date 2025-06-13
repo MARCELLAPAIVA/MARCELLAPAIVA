@@ -49,23 +49,23 @@ export default function ManageProductsPage() {
     return (
       <div className="space-y-12">
         <section>
-          <Skeleton className="h-12 w-1/2 mx-auto mb-8 bg-muted/50" />
-          <Skeleton className="h-64 w-full bg-muted/50 rounded-lg" />
+          <Skeleton className="h-12 w-1/2 mx-auto mb-8 bg-muted" />
+          <Skeleton className="h-64 w-full bg-muted rounded-lg" />
         </section>
         <section>
-          <Skeleton className="h-10 w-1/3 mx-auto mb-8 bg-muted/50" />
+          <Skeleton className="h-10 w-1/3 mx-auto mb-8 bg-muted" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, index) => (
               <Card key={index} className="bg-card border-border">
                 <CardHeader className="p-0 relative aspect-video">
-                  <Skeleton className="w-full h-full rounded-t-lg bg-muted/50" />
+                  <Skeleton className="w-full h-full rounded-t-lg bg-muted" />
                 </CardHeader>
                 <CardContent className="p-4">
-                  <Skeleton className="h-4 w-4/5 mb-2 bg-muted/50" />
-                  <Skeleton className="h-4 w-3/5 bg-muted/50" />
+                  <Skeleton className="h-4 w-4/5 mb-2 bg-muted" />
+                  <Skeleton className="h-4 w-3/5 bg-muted" />
                 </CardContent>
                 <CardFooter className="p-4 flex justify-end">
-                  <Skeleton className="h-10 w-24 bg-muted/50" />
+                  <Skeleton className="h-10 w-24 bg-muted" />
                 </CardFooter>
               </Card>
             ))}
@@ -76,10 +76,9 @@ export default function ManageProductsPage() {
   }
 
   if (!user) {
-    // This case should ideally be handled by the redirect, but as a fallback:
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-            <p className="text-primary text-xl">Redirecionando para o login...</p>
+            <p className="text-primary text-xl">Redirecionando para o login...</p> {/* Primary is dark gray */}
         </div>
     );
   }
@@ -87,19 +86,19 @@ export default function ManageProductsPage() {
   return (
     <div className="space-y-12">
       <section>
-        <h2 className="text-4xl font-headline font-bold text-primary mb-8 text-center">
+        <h2 className="text-4xl font-headline font-bold text-foreground mb-8 text-center">
           Gerenciar Produtos
         </h2>
         <ProductForm />
       </section>
 
       <section>
-        <h3 className="text-3xl font-headline text-primary mb-8 text-center">Produtos Cadastrados</h3>
+        <h3 className="text-3xl font-headline text-foreground mb-8 text-center">Produtos Cadastrados</h3>
         
         {products.length === 0 && (
            <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
-            <AlertTriangle size={48} className="text-primary mb-4" />
-            <h2 className="text-2xl font-headline text-primary mb-2">Nenhum Produto Cadastrado</h2>
+            <AlertTriangle size={48} className="text-primary mb-4" /> {/* Primary is dark gray */}
+            <h2 className="text-2xl font-headline text-foreground mb-2">Nenhum Produto Cadastrado</h2>
             <p className="text-muted-foreground font-body">
               Adicione novos produtos utilizando o formulário acima.
             </p>
@@ -123,7 +122,7 @@ export default function ManageProductsPage() {
                   )}
                 </CardHeader>
                 <CardContent className="p-4 flex-grow">
-                  <CardDescription className="text-foreground font-body line-clamp-4">
+                  <CardDescription className="text-card-foreground font-body line-clamp-4">
                     {product.description}
                   </CardDescription>
                 </CardContent>
@@ -135,9 +134,9 @@ export default function ManageProductsPage() {
                         <span className="sr-only">Remover</span>
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-primary">
+                    <AlertDialogContent className="bg-card border-primary"> {/* Card bg is light gray, primary is dark gray */}
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="font-headline text-primary">Confirmar Exclusão</AlertDialogTitle>
+                        <AlertDialogTitle className="font-headline text-foreground">Confirmar Exclusão</AlertDialogTitle>
                         <AlertDialogDescription className="text-card-foreground">
                           Tem certeza que deseja remover este produto? Esta ação não pode ser desfeita.
                         </AlertDialogDescription>

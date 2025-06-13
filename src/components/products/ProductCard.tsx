@@ -1,33 +1,35 @@
+
 "use client";
 
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // CardTitle, CardDescription removed
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Use the beginning of the description as a product name placeholder
+  const productName = product.description.substring(0, 40) + (product.description.length > 40 ? "..." : "");
+
   return (
-    <Card className="group bg-card border-border hover:shadow-xl hover:border-primary transition-all duration-300 ease-in-out transform hover:-translate-y-1 overflow-hidden">
-      <CardHeader className="p-0 relative aspect-square overflow-hidden">
+    <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
+      <div className="aspect-square relative w-full overflow-hidden">
         <Image
           src={product.imageBase64 || "https://placehold.co/400x400.png"}
-          alt={product.description.substring(0, 30) || "Imagem do Produto"}
-          width={400}
-          height={400}
-          className="object-cover w-full h-full group-hover:scale-105 group-hover:opacity-90 transition-all duration-500 ease-in-out"
+          alt={productName || "Imagem do Produto"}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover"
           data-ai-hint="product tobacco"
         />
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
-      </CardHeader>
-      <CardContent className="p-4">
-        {/* CardTitle could be used if products had names, for now, focusing on description */}
-        {/* <CardTitle className="font-headline text-lg text-primary mb-2 truncate">{product.name || "Produto"}</CardTitle> */}
-        <CardDescription className="font-body text-foreground line-clamp-3 h-16">
-          {product.description}
-        </CardDescription>
+      </div>
+      <CardContent className="p-3 flex-grow flex flex-col justify-center">
+        {/* Simplified product name display */}
+        <p className="font-body text-sm text-foreground text-center line-clamp-2">
+          {productName}
+        </p>
       </CardContent>
     </Card>
   );

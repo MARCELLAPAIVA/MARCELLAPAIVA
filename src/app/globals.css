@@ -4,49 +4,50 @@
 
 @layer base {
   :root {
-    --background: 0 0% 10%; /* Near-black #1A1A1A */
-    --foreground: 0 0% 98%; /* Light text for contrast */
+    --background: 0 0% 100%; /* White */
+    --foreground: 0 0% 13%; /* Near Black #212121 */
 
-    --card: 0 0% 13%; /* Slightly lighter than background for cards */
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 98%; /* Very Light Gray #FAFAFA */
+    --card-foreground: 0 0% 13%;
 
-    --popover: 0 0% 13%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 13%;
 
-    --primary: 51 100% 50%; /* Gold #FFD700 */
-    --primary-foreground: 0 0% 10%; /* Dark text on gold */
+    --primary: 0 0% 25%; /* Dark Gray #404040 for "Entrar" button */
+    --primary-foreground: 0 0% 98%; /* White text on dark gray button */
 
-    --secondary: 52 62% 83%; /* Light gold #EEE8AA */
-    --secondary-foreground: 0 0% 10%; /* Dark text on light gold */
+    --secondary: 0 0% 90%; /* Light Gray #E6E6E6 */
+    --secondary-foreground: 0 0% 13%;
 
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 65%; /* Lighter gray for muted text */
+    --muted: 0 0% 94%; /* Lighter Gray #F0F0F0 */
+    --muted-foreground: 0 0% 40%; /* Mid Gray #666666 for muted text */
 
-    --accent: 52 62% 83%; /* Light gold #EEE8AA - same as secondary for this theme */
-    --accent-foreground: 0 0% 10%; /* Dark text on accent */
+    --accent: 145 63% 42%; /* WhatsApp Green #25D366 */
+    --accent-foreground: 0 0% 100%; /* White text on green */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 51 100% 40%; /* Darker Gold for borders */
-    --input: 0 0% 15%; /* Slightly lighter than background for input fields */
-    --ring: 51 100% 60%; /* Brighter Gold for focus rings */
+    --border: 0 0% 85%; /* Light Gray #D9D9D9 for borders */
+    --input: 0 0% 96%; /* Very Light Gray #F5F5F5 for input backgrounds */
+    --ring: 0 0% 25%; /* Dark Gray for focus rings, matching primary */
 
     --radius: 0.5rem;
 
-    /* Sidebar specific colors - can be adjusted if sidebar is heavily used */
-    --sidebar-background: 0 0% 8%; 
-    --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 51 100% 50%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 52 62% 75%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 51 100% 50%;
+    /* Sidebar specific colors - updated to generally match the new theme's neutrality */
+    --sidebar-background: 0 0% 96%; /* Light gray, similar to input */
+    --sidebar-foreground: 0 0% 13%;
+    --sidebar-primary: 0 0% 25%; /* Dark Gray */
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 145 63% 42%; /* Green */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 0 0% 25%;
   }
 
-  /* Since the default theme is dark, the .dark class will have identical values.
-     It's kept for consistency with shadcn/ui structure but doesn't change appearance for this specific theme. */
+  /* The .dark class can be used if a dark mode toggle is ever implemented.
+     For now, it will invert the light theme or use a distinct dark theme if defined.
+     Keeping it simple by mostly inverting for now. */
   .dark {
     --background: 0 0% 10%;
     --foreground: 0 0% 98%;
@@ -54,28 +55,28 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 13%;
     --popover-foreground: 0 0% 98%;
-    --primary: 51 100% 50%;
-    --primary-foreground: 0 0% 10%;
-    --secondary: 52 62% 83%;
-    --secondary-foreground: 0 0% 10%;
+    --primary: 0 0% 80%; /* Light Gray for dark mode primary buttons */
+    --primary-foreground: 0 0% 10%; /* Dark text on light gray button */
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 20%;
     --muted-foreground: 0 0% 65%;
-    --accent: 52 62% 83%;
+    --accent: 145 63% 50%; /* Slightly lighter Green for dark mode */
     --accent-foreground: 0 0% 10%;
-    --destructive: 0 62.8% 30.6%; /* Standard dark destructive */
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 51 100% 40%;
+    --border: 0 0% 20%;
     --input: 0 0% 15%;
-    --ring: 51 100% 60%;
+    --ring: 0 0% 80%;
 
     --sidebar-background: 0 0% 8%; 
     --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary: 0 0% 80%;
     --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 52 62% 75%;
+    --sidebar-accent: 145 63% 50%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 51 100% 50%;
+    --sidebar-ring: 0 0% 80%;
   }
 }
 
