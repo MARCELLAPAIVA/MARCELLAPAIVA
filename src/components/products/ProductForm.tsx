@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useProducts } from '@/hooks/useProducts';
-import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { UploadCloud, XCircle, DollarSign } from 'lucide-react';
@@ -22,20 +21,21 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 const productFormSchema = z.object({
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }).max(500, { message: "A descrição não pode exceder 500 caracteres." }),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }).min(0.01, {message: "O preço deve ser maior que zero."}),
-  image: z.custom<FileList>()
-    .refine((files) => files && files.length > 0, "A imagem é obrigatória.")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE_BYTES, `O tamanho máximo da imagem é ${MAX_FILE_SIZE_MB}MB.`)
+  imageFile: z.instanceof(File)
+    .refine((file) => file.size <= MAX_FILE_SIZE_BYTES, `O tamanho máximo da imagem é ${MAX_FILE_SIZE_MB}MB.`)
     .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       "Apenas formatos .jpg, .jpeg, .png e .webp são suportados."
-    ),
+    ).nullable().optional(), // Make optional if you allow products without images initially, or handle no-file case
 });
+
+// If image is mandatory:
+// imageFile: z.instanceof(File, { message: "A imagem é obrigatória." }) ...rest of refines
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
 
 export default function ProductForm() {
-  const { addProduct } = useProducts();
-  const { toast } = useToast();
+  const { addProduct, isMutating } = useProducts();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const form = useForm<ProductFormValues>({
@@ -43,50 +43,42 @@ export default function ProductForm() {
     defaultValues: {
       description: "",
       price: undefined,
-      image: undefined,
+      imageFile: null,
     },
   });
 
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
-    if (data.image && data.image.length > 0) {
-      const file = data.image[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        addProduct({
-          description: data.description,
-          price: data.price,
-          imageBase64: reader.result as string,
-          imageName: file.name,
-        });
-        toast({
-          title: "Sucesso!",
-          description: "Produto adicionado com sucesso.",
-          variant: "default",
-        });
-        form.reset();
-        setImagePreview(null);
-      };
-      reader.readAsDataURL(file);
+    if (!data.imageFile) {
+      form.setError("imageFile", { type: "manual", message: "A imagem é obrigatória." });
+      return;
     }
+    
+    await addProduct(
+      { description: data.description, price: data.price },
+      data.imageFile
+    );
+    
+    // addProduct in useProducts hook now handles toast and refetch
+    form.reset();
+    setImagePreview(null);
   };
   
-  const imageFile = form.watch("image");
+  const imageFile = form.watch("imageFile");
 
   useEffect(() => {
-    if (imageFile && imageFile.length > 0) {
-      const file = imageFile[0];
+    if (imageFile instanceof File) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(imageFile);
     } else {
       setImagePreview(null);
     }
   }, [imageFile]);
 
   const clearImage = () => {
-    form.setValue("image", undefined as any, { shouldValidate: true }); 
+    form.setValue("imageFile", null, { shouldValidate: true }); 
     setImagePreview(null);
   };
 
@@ -128,6 +120,7 @@ export default function ProductForm() {
                     placeholder="Ex: 29.90"
                     className="pl-10 bg-input border-border focus:border-primary focus:ring-primary"
                     {...field}
+                    onChange={event => field.onChange(event.target.valueAsNumber)} // Ensure value is number
                   />
                 </div>
               </FormControl>
@@ -138,8 +131,8 @@ export default function ProductForm() {
 
         <FormField
           control={form.control}
-          name="image"
-          render={({ field }) => (
+          name="imageFile"
+          render={({ field: { onChange, value, ...restField } }) => (
             <FormItem>
               <FormLabel className="text-foreground font-headline text-lg">Imagem do Produto</FormLabel>
               <FormControl>
@@ -149,8 +142,11 @@ export default function ProductForm() {
                     accept={ACCEPTED_IMAGE_TYPES.join(",")}
                     className="hidden"
                     id="file-upload"
-                    onChange={(e) => field.onChange(e.target.files)}
-                    ref={field.ref}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      onChange(file || null);
+                    }}
+                    {...restField}
                   />
                   <Label 
                     htmlFor="file-upload"
@@ -169,7 +165,7 @@ export default function ProductForm() {
         
         {imagePreview && (
           <div className="relative group w-48 h-48 mx-auto border border-primary rounded-md overflow-hidden shadow-md">
-            <Image src={imagePreview} alt="Pré-visualização da imagem" layout="fill" objectFit="cover" />
+            <Image src={imagePreview} alt="Pré-visualização da imagem" fill style={{objectFit:"cover"}} />
             <Button
               type="button"
               variant="destructive"
@@ -183,8 +179,8 @@ export default function ProductForm() {
           </div>
         )}
 
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Adicionando..." : "Adicionar Produto"}
+        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={isMutating || form.formState.isSubmitting}>
+          {isMutating || form.formState.isSubmitting ? "Adicionando..." : "Adicionar Produto"}
         </Button>
       </form>
     </Form>

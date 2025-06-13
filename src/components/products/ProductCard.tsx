@@ -16,19 +16,30 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { user } = useAuth();
   const safeDescription = product.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const altText = safeDescription.substring(0,50);
+  const altText = product.imageName || safeDescription.substring(0,50) || "Imagem do produto";
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden">
-        <Image
-          src={product.imageBase64 || "https://placehold.co/400x400.png"}
-          alt={altText}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className="object-cover"
-          data-ai-hint="product tobacco"
-        />
+        {product.imageUrl ? (
+          <Image
+            src={product.imageUrl}
+            alt={altText}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover"
+            data-ai-hint="product tobacco"
+          />
+        ) : (
+           <Image
+            src={"https://placehold.co/400x400.png"}
+            alt={altText}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover"
+            data-ai-hint="product tobacco placeholder"
+          />
+        )}
       </div>
       <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
         <p className="font-body text-sm text-foreground line-clamp-2 mb-2">

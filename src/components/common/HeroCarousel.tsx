@@ -8,29 +8,28 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HeroCarousel() {
-  const { products, isHydrated } = useProducts();
+  const { products, isLoading } = useProducts(); // Using isLoading from Firebase hook
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedAlt, setSelectedAlt] = useState<string>("Banner rotativo de produtos em destaque");
 
   useEffect(() => {
-    if (isHydrated && products.length > 0) {
+    if (!isLoading && products.length > 0) {
       const randomIndex = Math.floor(Math.random() * products.length);
       const randomProduct = products[randomIndex];
-      if (randomProduct && randomProduct.imageBase64) {
-        setSelectedImage(randomProduct.imageBase64);
+      if (randomProduct && randomProduct.imageUrl) {
+        setSelectedImage(randomProduct.imageUrl);
         setSelectedAlt(randomProduct.description ? `Imagem de ${randomProduct.description.substring(0,50)}` : "Imagem de produto em destaque");
       } else {
-        // Fallback if a product is somehow malformed
         setSelectedImage("https://placehold.co/1200x420.png");
         setSelectedAlt("Banner de produto em destaque");
       }
-    } else if (isHydrated && products.length === 0) {
+    } else if (!isLoading && products.length === 0) {
       setSelectedImage("https://placehold.co/1200x420.png");
       setSelectedAlt("Adicione produtos para exibir no carrossel");
     }
-  }, [products, isHydrated]);
+  }, [products, isLoading]);
 
-  if (!isHydrated || !selectedImage) {
+  if (isLoading || !selectedImage) {
     return (
       <section aria-label="Destaques da Loja">
         <Card className="overflow-hidden shadow-lg border-none">
@@ -53,7 +52,6 @@ export default function HeroCarousel() {
             data-ai-hint="store banner promotion product"
             sizes="(max-width: 768px) 100vw, 1200px"
           />
-          {/* Simple overlay dots for carousel illusion, can be expanded later */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
             <span className="block w-2.5 h-2.5 bg-white/70 rounded-full"></span>
             <span className="block w-2.5 h-2.5 bg-white/40 rounded-full"></span>

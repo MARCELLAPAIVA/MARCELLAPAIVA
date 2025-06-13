@@ -1,8 +1,9 @@
+
 export interface Product {
-  id: string;
+  id: string; // Firestore document ID
   description: string;
-  imageBase64: string; // Store image as base64 string
-  imageName?: string; // Optional: store original image name
+  imageUrl: string; // URL from Firebase Storage
+  imageName?: string; // Original image name, can be part of the storage path
   price: number; // Product price
   createdAt: number; // Timestamp for sorting
 }
