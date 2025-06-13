@@ -42,6 +42,7 @@ export function useProducts() {
     setProducts((prevProducts) => prevProducts.filter((p) => p.id !== id));
   }, []);
 
+  // Sort products by creation date, newest first
   const sortedProducts = products.sort((a, b) => b.createdAt - a.createdAt);
 
   return { products: sortedProducts, addProduct, removeProduct, isHydrated };

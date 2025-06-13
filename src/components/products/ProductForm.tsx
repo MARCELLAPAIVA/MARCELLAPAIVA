@@ -13,7 +13,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { UploadCloud, XCircle } from 'lucide-react';
+import { UploadCloud, XCircle, DollarSign } from 'lucide-react';
 
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -21,6 +21,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 
 const productFormSchema = z.object({
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }).max(500, { message: "A descrição não pode exceder 500 caracteres." }),
+  price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }).min(0.01, {message: "O preço deve ser maior que zero."}),
   image: z.custom<FileList>()
     .refine((files) => files && files.length > 0, "A imagem é obrigatória.")
     .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE_BYTES, `O tamanho máximo da imagem é ${MAX_FILE_SIZE_MB}MB.`)
@@ -41,6 +42,7 @@ export default function ProductForm() {
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       description: "",
+      price: undefined,
       image: undefined,
     },
   });
@@ -52,13 +54,14 @@ export default function ProductForm() {
       reader.onloadend = () => {
         addProduct({
           description: data.description,
+          price: data.price,
           imageBase64: reader.result as string,
           imageName: file.name,
         });
         toast({
           title: "Sucesso!",
           description: "Produto adicionado com sucesso.",
-          variant: "default", // Default toast uses new theme colors
+          variant: "default",
         });
         form.reset();
         setImagePreview(null);
@@ -104,6 +107,29 @@ export default function ProductForm() {
                   rows={5}
                   {...field}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-foreground font-headline text-lg">Preço (R$)</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 29.90"
+                    className="pl-10 bg-input border-border focus:border-primary focus:ring-primary"
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

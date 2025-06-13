@@ -3,14 +3,17 @@
 
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card'; // CardTitle, CardDescription removed
+import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Use the beginning of the description as a product name placeholder
+  const { user } = useAuth();
   const productName = product.description.substring(0, 40) + (product.description.length > 40 ? "..." : "");
 
   return (
@@ -25,11 +28,22 @@ export default function ProductCard({ product }: ProductCardProps) {
           data-ai-hint="product tobacco"
         />
       </div>
-      <CardContent className="p-3 flex-grow flex flex-col justify-center">
-        {/* Simplified product name display */}
-        <p className="font-body text-sm text-foreground text-center line-clamp-2">
+      <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
+        <p className="font-body text-sm text-foreground line-clamp-2 mb-2">
           {productName}
         </p>
+        {user ? (
+          <p className="font-headline text-lg text-primary font-semibold">
+            {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </p>
+        ) : (
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Preço sob consulta</p>
+            <Button variant="link" asChild className="p-0 h-auto text-sm text-primary hover:text-primary/80">
+                <Link href="/login">Entrar para ver o preço</Link>
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -7,9 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProductForm from '@/components/products/ProductForm';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, Edit3 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -40,7 +40,7 @@ export default function ManageProductsPage() {
     removeProduct(id);
     toast({
       title: "Produto Removido",
-      description: `O produto "${productName || ' selecionado'}" foi removido com sucesso.`,
+      description: `O produto "${productName || 'selecionado'}" foi removido com sucesso.`,
       variant: "destructive",
     });
   };
@@ -50,7 +50,7 @@ export default function ManageProductsPage() {
       <div className="space-y-12">
         <section>
           <Skeleton className="h-12 w-1/2 mx-auto mb-8 bg-muted" />
-          <Skeleton className="h-64 w-full bg-muted rounded-lg" />
+          <Skeleton className="h-96 w-full bg-muted rounded-lg" /> {/* Increased height for form skeleton */}
         </section>
         <section>
           <Skeleton className="h-10 w-1/3 mx-auto mb-8 bg-muted" />
@@ -62,10 +62,12 @@ export default function ManageProductsPage() {
                 </CardHeader>
                 <CardContent className="p-4">
                   <Skeleton className="h-4 w-4/5 mb-2 bg-muted" />
-                  <Skeleton className="h-4 w-3/5 bg-muted" />
+                  <Skeleton className="h-4 w-3/5 mb-2 bg-muted" />
+                  <Skeleton className="h-6 w-1/3 bg-muted" /> {/* Skeleton for price */}
                 </CardContent>
-                <CardFooter className="p-4 flex justify-end">
-                  <Skeleton className="h-10 w-24 bg-muted" />
+                <CardFooter className="p-4 flex justify-end space-x-2">
+                  <Skeleton className="h-10 w-10 bg-muted rounded-md" />
+                  <Skeleton className="h-10 w-10 bg-muted rounded-md" />
                 </CardFooter>
               </Card>
             ))}
@@ -78,7 +80,7 @@ export default function ManageProductsPage() {
   if (!user) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
-            <p className="text-primary text-xl">Redirecionando para o login...</p> {/* Primary is dark gray */}
+            <p className="text-primary text-xl">Redirecionando para o login...</p>
         </div>
     );
   }
@@ -87,7 +89,7 @@ export default function ManageProductsPage() {
     <div className="space-y-12">
       <section>
         <h2 className="text-4xl font-headline font-bold text-foreground mb-8 text-center">
-          Gerenciar Produtos
+          Adicionar Novo Produto
         </h2>
         <ProductForm />
       </section>
@@ -97,7 +99,7 @@ export default function ManageProductsPage() {
         
         {products.length === 0 && (
            <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
-            <AlertTriangle size={48} className="text-primary mb-4" /> {/* Primary is dark gray */}
+            <AlertTriangle size={48} className="text-primary mb-4" />
             <h2 className="text-2xl font-headline text-foreground mb-2">Nenhum Produto Cadastrado</h2>
             <p className="text-muted-foreground font-body">
               Adicione novos produtos utilizando o formulário acima.
@@ -109,24 +111,35 @@ export default function ManageProductsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <Card key={product.id} className="bg-card border-border flex flex-col justify-between shadow-lg">
-                <CardHeader className="p-0 relative aspect-video">
+                <CardHeader className="p-0 relative aspect-[16/10]">
                   {product.imageBase64 && (
                     <Image
                       src={product.imageBase64}
                       alt={product.description.substring(0,30) || "Imagem do produto"}
-                      width={400}
-                      height={225}
+                      fill
                       className="object-cover w-full h-full rounded-t-lg"
                       data-ai-hint="product tobacco accessory"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                   )}
                 </CardHeader>
                 <CardContent className="p-4 flex-grow">
-                  <CardDescription className="text-card-foreground font-body line-clamp-4">
+                  <CardTitle className="text-lg font-headline text-primary mb-1 line-clamp-1">
+                     {product.description.substring(0, 30)}{product.description.length > 30 ? '...' : ''}
+                  </CardTitle>
+                  <p className="text-2xl font-bold text-foreground mb-2">
+                    {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                  <CardDescription className="text-card-foreground/80 font-body text-sm line-clamp-3">
                     {product.description}
                   </CardDescription>
                 </CardContent>
                 <CardFooter className="p-4 flex justify-end items-center space-x-2 border-t border-border mt-auto">
+                  {/* Edit button - non-functional for now */}
+                  <Button variant="outline" size="icon" disabled className="border-primary text-primary hover:bg-primary/10">
+                    <Edit3 size={18} />
+                    <span className="sr-only">Editar</span>
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="icon">
@@ -134,11 +147,11 @@ export default function ManageProductsPage() {
                         <span className="sr-only">Remover</span>
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-primary"> {/* Card bg is light gray, primary is dark gray */}
+                    <AlertDialogContent className="bg-card border-primary">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="font-headline text-foreground">Confirmar Exclusão</AlertDialogTitle>
                         <AlertDialogDescription className="text-card-foreground">
-                          Tem certeza que deseja remover este produto? Esta ação não pode ser desfeita.
+                          Tem certeza que deseja remover o produto "{product.description.substring(0,20)}{product.description.length > 20 ? '...' : ''}"? Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
