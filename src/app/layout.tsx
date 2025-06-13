@@ -3,10 +3,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/common/Header';
-// Footer is removed as per new design which uses a bottom categories bar
-// import Footer from '@/components/common/Footer';
+// CategoriesBar is removed as its functionality is moved to the Header
 import { AuthProvider } from '@/contexts/AuthContext';
-import CategoriesBar from '@/components/common/CategoriesBar';
 import WhatsAppButton from '@/components/common/WhatsAppButton';
 
 export const metadata: Metadata = {
@@ -29,12 +27,9 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground min-h-screen flex flex-col">
         <AuthProvider>
           <Header />
-          <main className="flex-grow container mx-auto px-4 py-8 pb-20"> {/* Added pb-20 for CategoriesBar space */}
+          <main className="flex-grow container mx-auto px-4 py-8 pb-8"> {/* Adjusted pb-20 to pb-8 */}
             {children}
           </main>
-          {/* Footer component is replaced by CategoriesBar and WhatsAppButton for the new design */}
-          {/* <Footer /> */}
-          <CategoriesBar />
           <WhatsAppButton />
           <Toaster />
         </AuthProvider>
