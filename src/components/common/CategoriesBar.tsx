@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react"; 
+import { Menu, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,7 +12,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Link from "next/link"; // Assuming categories might link somewhere in the future
+// import Link from "next/link"; // Assuming categories might link somewhere in the future
 
 const categories = [
   "BBQ",
@@ -35,7 +35,7 @@ const categories = [
 
 export default function CategoriesBar() {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card p-2 border-t border-border md:hidden z-40">
+    <div className="fixed bottom-0 left-0 right-0 bg-card p-2 border-t border-border md:hidden z-[45]"> {/* Changed z-40 to z-[45] */}
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" className="w-full flex items-center justify-center gap-2 text-card-foreground hover:bg-muted/80">
@@ -60,7 +60,7 @@ export default function CategoriesBar() {
               {categories.map((category) => (
                 <li key={category}>
                   {/* For now, these are just text. They can be <Link> or <Button> later for filtering. */}
-                  <button 
+                  <button
                     onClick={() => {
                         // Placeholder for category selection logic
                         // For now, it could close the sheet or navigate (if linking)
@@ -80,3 +80,4 @@ export default function CategoriesBar() {
     </div>
   );
 }
+
