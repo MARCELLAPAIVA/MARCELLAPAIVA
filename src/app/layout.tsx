@@ -10,7 +10,7 @@ import CategoriesBar from '@/components/common/CategoriesBar';
 import WhatsAppButton from '@/components/common/WhatsAppButton';
 
 export const metadata: Metadata = {
-  title: 'DISTRIBUIDORA 2RJ',
+  title: 'M&T TABACARIA',
   description: 'Exclusivos produtos de tabacaria e acessórios.',
 };
 
