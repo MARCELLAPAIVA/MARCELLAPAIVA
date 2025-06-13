@@ -1,7 +1,14 @@
+
+"use client";
+
 import Link from 'next/link';
-import { ShoppingBag } from 'lucide-react'; // Using ShoppingBag as a generic shop icon
+import { ShoppingBag, LogIn, LogOut, UserCog } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 export default function Header() {
+  const { user, logout, isLoading } = useAuth();
+
   return (
     <header className="bg-card shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -18,11 +25,33 @@ export default function Header() {
                 Produtos
               </Link>
             </li>
-            <li>
-              <Link href="/manage" className="text-foreground hover:text-primary transition-colors font-medium">
-                Gerenciar Produtos
-              </Link>
-            </li>
+            {isLoading ? (
+              <li>
+                <div className="h-6 w-20 bg-muted/50 animate-pulse rounded-md"></div>
+              </li>
+            ) : user ? (
+              <>
+                <li>
+                  <Link href="/manage" className="flex items-center text-foreground hover:text-primary transition-colors font-medium">
+                    <UserCog size={18} className="mr-1.5"/>
+                    Gerenciar
+                  </Link>
+                </li>
+                <li>
+                  <Button onClick={logout} variant="ghost" className="text-foreground hover:text-primary hover:bg-primary/10 px-3 py-1.5 h-auto">
+                    <LogOut size={18} className="mr-1.5" />
+                    Sair
+                  </Button>
+                </li>
+              </>
+            ) : (
+              <li>
+                <Link href="/login" className="flex items-center text-foreground hover:text-primary transition-colors font-medium">
+                   <LogIn size={18} className="mr-1.5"/>
+                  Login Admin
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
       </div>

@@ -1,11 +1,15 @@
+
 "use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import ProductForm from '@/components/products/ProductForm';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
-import { Trash2, Edit3, AlertTriangle } from 'lucide-react'; // Edit3 icon can be used if edit functionality is added later
+import { Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -20,10 +24,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 export default function ManageProductsPage() {
-  const { products, removeProduct, isHydrated } = useProducts();
+  const { user, isLoading: authIsLoading } = useAuth();
+  const router = useRouter();
+  const { products, removeProduct, isHydrated: productsAreHydrated } = useProducts();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!authIsLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authIsLoading, router]);
 
   const handleDelete = (id: string, productName?: string) => {
     removeProduct(id);
@@ -34,18 +45,15 @@ export default function ManageProductsPage() {
     });
   };
 
-  return (
-    <div className="space-y-12">
-      <section>
-        <h2 className="text-4xl font-headline font-bold text-primary mb-8 text-center">
-          Gerenciar Produtos
-        </h2>
-        <ProductForm />
-      </section>
-
-      <section>
-        <h3 className="text-3xl font-headline text-primary mb-8 text-center">Produtos Cadastrados</h3>
-        {!isHydrated && (
+  if (authIsLoading || !productsAreHydrated) {
+    return (
+      <div className="space-y-12">
+        <section>
+          <Skeleton className="h-12 w-1/2 mx-auto mb-8 bg-muted/50" />
+          <Skeleton className="h-64 w-full bg-muted/50 rounded-lg" />
+        </section>
+        <section>
+          <Skeleton className="h-10 w-1/3 mx-auto mb-8 bg-muted/50" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, index) => (
               <Card key={index} className="bg-card border-border">
@@ -62,9 +70,33 @@ export default function ManageProductsPage() {
               </Card>
             ))}
           </div>
-        )}
+        </section>
+      </div>
+    );
+  }
 
-        {isHydrated && products.length === 0 && (
+  if (!user) {
+    // This case should ideally be handled by the redirect, but as a fallback:
+    return (
+        <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+            <p className="text-primary text-xl">Redirecionando para o login...</p>
+        </div>
+    );
+  }
+
+  return (
+    <div className="space-y-12">
+      <section>
+        <h2 className="text-4xl font-headline font-bold text-primary mb-8 text-center">
+          Gerenciar Produtos
+        </h2>
+        <ProductForm />
+      </section>
+
+      <section>
+        <h3 className="text-3xl font-headline text-primary mb-8 text-center">Produtos Cadastrados</h3>
+        
+        {products.length === 0 && (
            <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
             <AlertTriangle size={48} className="text-primary mb-4" />
             <h2 className="text-2xl font-headline text-primary mb-2">Nenhum Produto Cadastrado</h2>
@@ -74,7 +106,7 @@ export default function ManageProductsPage() {
           </div>
         )}
 
-        {isHydrated && products.length > 0 && (
+        {products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <Card key={product.id} className="bg-card border-border flex flex-col justify-between shadow-lg">
@@ -96,11 +128,6 @@ export default function ManageProductsPage() {
                   </CardDescription>
                 </CardContent>
                 <CardFooter className="p-4 flex justify-end items-center space-x-2 border-t border-border mt-auto">
-                  {/* Edit button placeholder, can be implemented later */}
-                  {/* <Button variant="outline" size="icon" className="text-primary border-primary hover:bg-primary/10">
-                    <Edit3 size={18} />
-                    <span className="sr-only">Editar</span>
-                  </Button> */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="icon">
