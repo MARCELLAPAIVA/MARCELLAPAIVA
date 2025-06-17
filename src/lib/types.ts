@@ -8,3 +8,8 @@ export interface Product {
   category: string; // Product category
   createdAt: number; // Timestamp for sorting
 }
+
+export interface User {
+  username: string;
+  role: 'admin' | 'client';
+}

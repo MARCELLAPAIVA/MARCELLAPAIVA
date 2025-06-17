@@ -5,27 +5,26 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-
-interface User {
-  username: string;
-}
+import type { User } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (usernameInput: string, passwordInput: string) => Promise<boolean>;
+  register: (usernameInput: string, passwordInput: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded users for prototype purposes
-const ALLOWED_USERS = [
+// Hardcoded admin users
+const ALLOWED_ADMIN_USERS = [
   { username: 'MVP', password: '101416Saka' },
   { username: 'MSP', password: 'Royal2025' },
 ];
 
-const AUTH_STORAGE_KEY = 'mtTabacariaAuthUser';
+const AUTH_STORAGE_KEY = 'mtTabacariaAuthUser'; // Stores the currently logged-in user (admin or client)
+const CLIENT_USERS_STORAGE_KEY = 'mtTabacariaClientUsers'; // Stores registered client accounts
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -45,31 +44,104 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (usernameInput: string, passwordInput: string): Promise<boolean> => {
-    setIsLoading(true);
-    const foundUser = ALLOWED_USERS.find(
-      (u) => u.username === usernameInput && u.password === passwordInput
-    );
+  const getClientUsers = (): User[] => {
+    try {
+      const storedClientUsers = localStorage.getItem(CLIENT_USERS_STORAGE_KEY);
+      return storedClientUsers ? JSON.parse(storedClientUsers) : [];
+    } catch (error) {
+      console.error("Failed to load client users from localStorage:", error);
+      return [];
+    }
+  };
 
-    if (foundUser) {
-      const userData = { username: foundUser.username };
-      setUser(userData);
-      try {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
-      } catch (error) {
-        console.error("Failed to save user to localStorage:", error);
-      }
-      setIsLoading(false);
-      return true;
-    } else {
+  const saveClientUsers = (clientUsers: User[]) => {
+    try {
+      localStorage.setItem(CLIENT_USERS_STORAGE_KEY, JSON.stringify(clientUsers));
+    } catch (error) {
+      console.error("Failed to save client users to localStorage:", error);
+    }
+  };
+
+  const register = useCallback(async (usernameInput: string, passwordInput: string): Promise<boolean> => {
+    setIsLoading(true);
+    const clientUsers = getClientUsers();
+    const isAdmin = ALLOWED_ADMIN_USERS.some(admin => admin.username === usernameInput);
+    const clientExists = clientUsers.some(client => client.username === usernameInput);
+
+    if (isAdmin || clientExists) {
       toast({
-        title: "Falha no Login",
-        description: "Usuário ou senha inválidos.",
+        title: "Falha no Registro",
+        description: "Nome de usuário já existe.",
         variant: "destructive",
       });
       setIsLoading(false);
       return false;
     }
+
+    // In a real app, hash the password before saving
+    const newClient: User = { username: usernameInput, role: 'client' };
+    const updatedClientUsers = [...clientUsers, { ...newClient, password: passwordInput }]; // Storing password directly for prototype
+
+    // Simulate saving to DB
+    localStorage.setItem(CLIENT_USERS_STORAGE_KEY, JSON.stringify(updatedClientUsers.map(u => ({username: u.username, password: (u as any).password, role: u.role }))));
+
+
+    toast({
+      title: "Registro Bem-Sucedido",
+      description: "Sua conta foi criada. Faça o login.",
+      variant: "default",
+    });
+    setIsLoading(false);
+    return true;
+  }, [toast]);
+
+
+  const login = useCallback(async (usernameInput: string, passwordInput: string): Promise<boolean> => {
+    setIsLoading(true);
+
+    // Check for admin user
+    const foundAdmin = ALLOWED_ADMIN_USERS.find(
+      (u) => u.username === usernameInput && u.password === passwordInput
+    );
+
+    if (foundAdmin) {
+      const adminData: User = { username: foundAdmin.username, role: 'admin' };
+      setUser(adminData);
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(adminData));
+      } catch (error) {
+        console.error("Failed to save admin user to localStorage:", error);
+      }
+      setIsLoading(false);
+      return true;
+    }
+
+    // Check for client user
+    const clientUsersWithPasswords = getClientUsers(); // This should retrieve users with their passwords stored for prototype
+    const foundClient = clientUsersWithPasswords.find(
+      (u: any) => u.username === usernameInput && u.password === passwordInput
+    );
+
+
+    if (foundClient) {
+      const clientData: User = { username: foundClient.username, role: 'client' };
+      setUser(clientData);
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(clientData));
+      } catch (error) {
+        console.error("Failed to save client user to localStorage:", error);
+      }
+      setIsLoading(false);
+      return true;
+    }
+    
+    toast({
+      title: "Falha no Login",
+      description: "Usuário ou senha inválidos.",
+      variant: "destructive",
+    });
+    setIsLoading(false);
+    return false;
   }, [toast]);
 
   const logout = useCallback(() => {
@@ -83,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -96,4 +168,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

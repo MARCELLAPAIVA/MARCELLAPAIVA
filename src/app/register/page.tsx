@@ -2,44 +2,51 @@
 "use client";
 
 import { useState, type FormEvent, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, UserPlus } from 'lucide-react'; // Added UserPlus
+import { UserPlus, LogIn } from 'lucide-react';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { login, user, isLoading: authLoading } = useAuth();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const { register, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!authLoading && user) {
+      // If user is already logged in, redirect based on role
       if (user.role === 'admin') {
         router.push('/manage');
-      } else if (user.role === 'client') {
-        const redirectUrl = searchParams.get('redirect') || '/';
-        router.push(redirectUrl);
+      } else {
+        router.push('/');
       }
     }
-  }, [user, authLoading, router, searchParams]);
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSubmitting(true);
-    const success = await login(username, password);
-    // Redirection is handled by useEffect
-    if (!success) {
-      setIsSubmitting(false);
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
     }
-    // If successful, useEffect will handle redirection.
-    // If login fails, we need to set isSubmitting to false here.
+    setError('');
+    setIsSubmitting(true);
+    const success = await register(username, password);
+    if (success) {
+      router.push('/login'); // Redirect to login page after successful registration
+    } else {
+      // Error message is handled by toast in AuthContext, but we can set local error too if needed
+      // setError("Falha no registro. O nome de usuário pode já existir.");
+    }
+    setIsSubmitting(false);
   };
 
   if (authLoading) {
@@ -49,9 +56,7 @@ export default function LoginPage() {
       </div>
     );
   }
-  
-  // If user is already logged in, useEffect will redirect them.
-  // We can show a temporary message or null.
+
   if (user) {
      return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -64,9 +69,9 @@ export default function LoginPage() {
     <div className="flex justify-center items-center min-h-[calc(100vh-250px)] py-12">
       <Card className="w-full max-w-md bg-card border-border shadow-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-headline text-foreground">Login</CardTitle>
+          <CardTitle className="text-3xl font-headline text-foreground">Criar Conta</CardTitle>
           <CardDescription className="text-muted-foreground font-body">
-            Acesse sua conta ou o painel de gerenciamento.
+            Crie sua conta para visualizar preços e mais.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -80,7 +85,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 className="bg-input border-border focus:border-primary focus:ring-primary"
-                placeholder="Seu usuário"
+                placeholder="Escolha um nome de usuário"
               />
             </div>
             <div className="space-y-2">
@@ -91,25 +96,39 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
                 className="bg-input border-border focus:border-primary focus:ring-primary"
-                placeholder="Sua senha"
+                placeholder="Crie uma senha (mín. 6 caracteres)"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-foreground font-headline">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="bg-input border-border focus:border-primary focus:ring-primary"
+                placeholder="Confirme sua senha"
+              />
+            </div>
+            {error && <p className="text-sm text-destructive font-body">{error}</p>}
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={isSubmitting || authLoading}>
-              {isSubmitting ? "Entrando..." : (
+              {isSubmitting ? "Criando conta..." : (
                 <>
-                  <LogIn size={20} className="mr-2" />
-                  Entrar
+                  <UserPlus size={20} className="mr-2" />
+                  Criar Conta
                 </>
               )}
             </Button>
           </form>
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground font-body">
-              Não tem uma conta?{' '}
+              Já tem uma conta?{' '}
               <Button variant="link" asChild className="text-primary hover:text-primary/80 p-0 h-auto">
-                <Link href="/register">
-                  Crie aqui <UserPlus size={16} className="ml-1" />
+                <Link href="/login">
+                  Faça login <LogIn size={16} className="ml-1" />
                 </Link>
               </Button>
             </p>
