@@ -97,10 +97,13 @@ export function useProducts() {
 
     if (searchTerm && searchTerm.trim() !== '') {
       const lowercasedSearchTerm = searchTerm.toLowerCase();
-      tempProducts = tempProducts.filter(product =>
-        product.description.toLowerCase().includes(lowercasedSearchTerm) ||
-        (product.category && product.category.toLowerCase().includes(lowercasedSearchTerm))
-      );
+      tempProducts = tempProducts.filter(product => {
+        // Verifica se product.description existe e é uma string antes de chamar toLowerCase()
+        const descriptionMatch = product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(lowercasedSearchTerm);
+        // Verifica se product.category existe e é uma string antes de chamar toLowerCase()
+        const categoryMatch = product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(lowercasedSearchTerm);
+        return descriptionMatch || categoryMatch;
+      });
     }
     return tempProducts;
   }, [rawProducts, selectedCategory, searchTerm]);
