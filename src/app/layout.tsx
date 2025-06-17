@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/common/Header';
-// CategoriesBar is removed as its functionality is moved to the Header
+import Footer from '@/components/common/Footer'; // Importar o Footer
 import { AuthProvider } from '@/contexts/AuthContext';
 import WhatsAppButton from '@/components/common/WhatsAppButton';
 
@@ -27,9 +27,10 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground min-h-screen flex flex-col">
         <AuthProvider>
           <Header />
-          <main className="flex-grow container mx-auto px-4 py-8 pb-8"> {/* Adjusted pb-20 to pb-8 */}
+          <main className="flex-grow container mx-auto px-4 py-8 pb-8">
             {children}
           </main>
+          <Footer /> {/* Adicionar o Footer aqui */}
           <WhatsAppButton />
           <Toaster />
         </AuthProvider>
