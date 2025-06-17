@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Product } from '@/lib/types';
 import {
   addProductToFirebase,
@@ -11,17 +11,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false); // For add/delete operations
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const firebaseProducts = await getProductsFromFirebase();
-      setProducts(firebaseProducts);
+      setRawProducts(firebaseProducts);
     } catch (error) {
       console.error("Failed to load products from Firebase:", error);
       toast({
@@ -29,7 +30,7 @@ export function useProducts() {
         description: "Não foi possível buscar os produtos do servidor. Tente novamente mais tarde.",
         variant: "destructive",
       });
-      setProducts([]);
+      setRawProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +51,7 @@ export function useProducts() {
       toast({
         title: "Sucesso!",
         description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
-        variant: "default", 
+        variant: "default",
       });
     } catch (error) {
       console.error("Failed to add product:", error);
@@ -68,7 +69,7 @@ export function useProducts() {
     setIsMutating(true);
     try {
       await deleteProductFromFirebase(id, imageUrl);
-      setProducts((prevProducts) => prevProducts.filter((p) => p.id !== id));
+      setRawProducts((prevProducts) => prevProducts.filter((p) => p.id !== id)); // Update rawProducts
       toast({
         title: "Produto Removido",
         description: `O produto "${productName || 'selecionado'}" foi removido com sucesso.`,
@@ -87,17 +88,37 @@ export function useProducts() {
     }
   }, [toast, fetchProducts]);
 
-  const isHydrated = !isLoading; 
+  const products = useMemo(() => {
+    let tempProducts = [...rawProducts];
+
+    if (selectedCategory) {
+      tempProducts = tempProducts.filter(product => product.category === selectedCategory);
+    }
+
+    if (searchTerm && searchTerm.trim() !== '') {
+      const lowercasedSearchTerm = searchTerm.toLowerCase();
+      tempProducts = tempProducts.filter(product =>
+        product.description.toLowerCase().includes(lowercasedSearchTerm) ||
+        (product.category && product.category.toLowerCase().includes(lowercasedSearchTerm))
+      );
+    }
+    return tempProducts;
+  }, [rawProducts, selectedCategory, searchTerm]);
+
+  const isHydrated = !isLoading;
 
   return {
-    products,
+    products, // Filtered/searched products
+    rawProducts, // All products without filters/search
     addProduct,
     removeProduct,
-    isLoading, 
-    isMutating, 
-    isHydrated, 
-    refetchProducts: fetchProducts, 
+    isLoading,
+    isMutating,
+    isHydrated,
+    refetchProducts: fetchProducts,
     selectedCategory,
-    setSelectedCategory
+    setSelectedCategory,
+    searchTerm,
+    setSearchTerm,
   };
 }
