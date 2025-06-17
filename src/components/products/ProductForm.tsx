@@ -26,11 +26,8 @@ const productFormSchema = z.object({
     .refine(
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       "Apenas formatos .jpg, .jpeg, .png e .webp são suportados."
-    ).nullable().optional(), // Make optional if you allow products without images initially, or handle no-file case
+    ).nullable().optional(),
 });
-
-// If image is mandatory:
-// imageFile: z.instanceof(File, { message: "A imagem é obrigatória." }) ...rest of refines
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
 
@@ -58,7 +55,6 @@ export default function ProductForm() {
       data.imageFile
     );
     
-    // addProduct in useProducts hook now handles toast and refetch
     form.reset();
     setImagePreview(null);
   };
@@ -119,8 +115,17 @@ export default function ProductForm() {
                     step="0.01"
                     placeholder="Ex: 29.90"
                     className="pl-10 bg-input border-border focus:border-primary focus:ring-primary"
-                    {...field}
-                    onChange={event => field.onChange(event.target.valueAsNumber)} // Ensure value is number
+                    {...field} // Spreads name, onBlur, ref
+                    value={(field.value === undefined || field.value === null || isNaN(Number(field.value))) ? '' : String(field.value)}
+                    onChange={event => {
+                      const value = event.target.value;
+                      if (value === '') {
+                        field.onChange(undefined); 
+                      } else {
+                        const num = parseFloat(value);
+                        field.onChange(isNaN(num) ? undefined : num);
+                      }
+                    }}
                   />
                 </div>
               </FormControl>

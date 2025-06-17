@@ -2,17 +2,16 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
-
-// IMPORTANT: Replace with your app's Firebase project configuration
-// Go to your Firebase project settings, find "Your apps", and copy the config object.
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your API key
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // Replace with your Auth domain
-  projectId: "YOUR_PROJECT_ID", // Replace with your Project ID
-  storageBucket: "YOUR_PROJECT_ID.appspot.com", // Replace with your Storage bucket
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Replace with your Messaging Sender ID
-  appId: "YOUR_APP_ID", // Replace with your App ID
-  // measurementId: "YOUR_MEASUREMENT_ID" // Optional: for Google Analytics
+  apiKey: "AIzaSyD2OaJq8Psvj3mCLDBCrcv-7d24eINCSPs",
+  authDomain: "whisk-51712.firebaseapp.com",
+  projectId: "whisk-51712",
+  storageBucket: "whisk-51712.firebasestorage.app",
+  messagingSenderId: "880868191941",
+  appId: "1:880868191941:web:847167a98ae595c9420aac",
+  measurementId: "G-55KD657X9H"
 };
 
 // Initialize Firebase
