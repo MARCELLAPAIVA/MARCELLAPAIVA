@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Search, Menu, X, ShieldCheck } from 'lucide-react'; // Adicionado ShieldCheck
+import { Search, Menu, X, ShieldCheck, ListFilter } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,10 +13,19 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator"; // Adicionado Separator
+import { Separator } from "@/components/ui/separator"; 
 import { categories } from '@/lib/categories'; 
+import { useProducts } from '@/hooks/useProducts'; // Importar o hook useProducts
+
+const ALL_CATEGORIES_VALUE = null; // Representa "Todas as Categorias"
 
 export default function Header() {
+  const { setSelectedCategory, selectedCategory } = useProducts(); // Usar o hook
+
+  const handleCategorySelect = (category: string | null) => {
+    setSelectedCategory(category);
+  };
+
   return (
     <header className="bg-black text-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -41,13 +50,26 @@ export default function Header() {
                 </div>
               </SheetHeader>
               <ScrollArea className="flex-grow">
-                <ul className="space-y-1 p-4"> {/* Ajustado padding e space-y */}
+                <ul className="space-y-1 p-4">
+                  <li>
+                    <SheetClose asChild>
+                      <button
+                        onClick={() => handleCategorySelect(ALL_CATEGORIES_VALUE)}
+                        className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body flex items-center
+                          ${selectedCategory === ALL_CATEGORIES_VALUE ? 'bg-primary/20 text-primary font-semibold' : 'text-foreground hover:bg-muted/50'}`}
+                      >
+                        <ListFilter size={18} className="mr-2 opacity-70" />
+                        Todas as Categorias
+                      </button>
+                    </SheetClose>
+                  </li>
                   {categories.map((category) => (
                     <li key={category}>
                       <SheetClose asChild>
                         <button
-                          // onClick={() => { /* Placeholder for category selection logic */ }}
-                          className="w-full text-left py-3 px-3 text-foreground hover:bg-muted/50 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body"
+                          onClick={() => handleCategorySelect(category)}
+                          className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body
+                            ${selectedCategory === category ? 'bg-primary/20 text-primary font-semibold' : 'text-foreground hover:bg-muted/50'}`}
                         >
                           {category}
                         </button>
@@ -80,7 +102,6 @@ export default function Header() {
         </div>
 
         <nav className="flex items-center space-x-3 sm:space-x-4">
-          {/* O link "Acesso Admin" foi removido daqui */}
           <Button variant="ghost" size="icon" className="bg-white hover:bg-gray-200 text-black rounded-full h-8 w-8 sm:h-9 sm:w-9">
             <Search size={18} />
             <span className="sr-only">Buscar</span>
