@@ -3,10 +3,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/lib/types';
-import { 
-  addProductToFirebase, 
-  getProductsFromFirebase, 
-  deleteProductFromFirebase 
+import {
+  addProductToFirebase,
+  getProductsFromFirebase,
+  deleteProductFromFirebase
 } from '@/lib/productService';
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,6 +14,7 @@ export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false); // For add/delete operations
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
@@ -28,7 +29,7 @@ export function useProducts() {
         description: "Não foi possível buscar os produtos do servidor. Tente novamente mais tarde.",
         variant: "destructive",
       });
-      setProducts([]); 
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -39,18 +40,17 @@ export function useProducts() {
   }, [fetchProducts]);
 
   const addProduct = useCallback(async (
-    productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl'>, // This type now includes 'category'
+    productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl'>,
     imageFile: File
   ) => {
     setIsMutating(true);
     try {
-      // addProductToFirebase now handles productData which includes category
       await addProductToFirebase(productData, imageFile);
-      await fetchProducts(); 
+      await fetchProducts();
       toast({
         title: "Sucesso!",
         description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
-        variant: "default", 
+        variant: "default",
       });
     } catch (error) {
       console.error("Failed to add product:", error);
@@ -72,7 +72,7 @@ export function useProducts() {
       toast({
         title: "Produto Removido",
         description: `O produto "${productName || 'selecionado'}" foi removido com sucesso.`,
-        variant: "default", // Changed from destructive to default for consistency, or keep as destructive if preferred
+        variant: "default",
       });
     } catch (error) {
       console.error("Failed to remove product:", error);
@@ -86,8 +86,18 @@ export function useProducts() {
       setIsMutating(false);
     }
   }, [toast, fetchProducts]);
-  
-  const isHydrated = !isLoading; 
 
-  return { products, addProduct, removeProduct, isLoading, isMutating, isHydrated, refetchProducts: fetchProducts };
+  const isHydrated = !isLoading;
+
+  return {
+    products,
+    addProduct,
+    removeProduct,
+    isLoading,
+    isMutating,
+    isHydrated,
+    refetchProducts: fetchProducts,
+    selectedCategory,
+    setSelectedCategory
+  };
 }

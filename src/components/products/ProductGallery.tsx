@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
 
 export default function ProductGallery() {
-  const { products, isHydrated } = useProducts();
+  const { products, isHydrated, selectedCategory } = useProducts();
 
   if (!isHydrated) {
     return (
@@ -24,13 +24,19 @@ export default function ProductGallery() {
     );
   }
 
-  if (products.length === 0) {
+  const filteredProducts = selectedCategory
+    ? products.filter(product => product.category === selectedCategory)
+    : products;
+
+  if (filteredProducts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md">
-        <AlertTriangle size={48} className="text-primary mb-4" /> {/* Primary is dark gray */}
-        <h2 className="text-2xl font-headline text-foreground mb-2">Nenhum Produto Cadastrado</h2> {/* Foreground is near black */}
+      <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
+        <AlertTriangle size={48} className="text-primary mb-4" />
+        <h2 className="text-2xl font-headline text-foreground mb-2">
+          {selectedCategory ? `Nenhum produto encontrado em "${selectedCategory}"` : "Nenhum Produto Cadastrado"}
+        </h2>
         <p className="text-muted-foreground font-body">
-          Ainda não há produtos para exibir. Adicione novos produtos na página de gerenciamento.
+          {selectedCategory ? "Tente selecionar outra categoria ou limpar o filtro." : "Adicione novos produtos na página de gerenciamento."}
         </p>
       </div>
     );
@@ -38,7 +44,7 @@ export default function ProductGallery() {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-      {products.map((product) => (
+      {filteredProducts.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}
     </div>
