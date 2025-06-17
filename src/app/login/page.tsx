@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogIn, UserPlus } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,43 +19,71 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && user) {
-      if (user.role === 'admin') {
-        router.push('/manage');
-      } else if (user.role === 'client') {
-        const redirectUrl = searchParams.get('redirect') || '/';
-        router.push(redirectUrl);
+      if (user.status === 'pending') {
+        // Toast is handled by AuthContext's onAuthStateChanged
+        // No redirection needed, user stays on login page or wherever they are.
+        // Or redirect to a specific "awaiting approval" page if it exists:
+        // router.push('/awaiting-approval');
+        return;
+      }
+      if (user.status === 'rejected') {
+        // Toast is handled by AuthContext's onAuthStateChanged
+        return;
+      }
+      // Only redirect if approved
+      if (user.status === 'approved') {
+        if (user.role === 'admin') {
+          router.push('/manage');
+        } else if (user.role === 'client') {
+          const redirectUrl = searchParams.get('redirect') || '/';
+          router.push(redirectUrl);
+        }
       }
     }
-  }, [user, authLoading, router, searchParams]);
+  }, [user, authLoading, router, searchParams, toast]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
     const success = await login(email, password);
+    // If login initiated successfully, onAuthStateChanged in AuthContext will handle user state
+    // and the useEffect above will handle redirection based on status.
+    // If login itself fails (e.g., wrong password before checking status), AuthContext.login shows a toast.
     if (!success) {
-      setIsSubmitting(false); // Only set to false if login failed
+      setIsSubmitting(false); // Only set to false if login initiation failed
     }
-    // If successful, useEffect will handle redirection.
+    // Don't setIsSubmitting(false) on success, as redirection or status messages will occur.
   };
 
-  if (authLoading && !user) { // Show loading only if not yet redirected
+  if (authLoading && !user) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
       </div>
     );
   }
-  
-  if (user) { // If user is already available, useEffect will redirect
-     return (
+
+  // If user is loaded but status is pending/rejected, they should not see "Redirecionando..."
+  // unless explicitly redirected to an info page. For now, they stay on login.
+  if (user && user.status !== 'approved' && !authLoading) {
+    // User is loaded, but not approved. The useEffect handles toasts.
+    // They should remain on the login page or be on a dedicated info page.
+    // This return is to prevent rendering the form if user is loaded but not approved.
+    // It assumes toasts from AuthContext are sufficient.
+    // If you create an /awaiting-approval page, redirect there in useEffect.
+  } else if (user && user.status === 'approved' && !authLoading) {
+    // User is approved and loaded, useEffect will redirect.
+    return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Redirecionando...</p>
       </div>
     );
   }
+
 
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-250px)] py-12">

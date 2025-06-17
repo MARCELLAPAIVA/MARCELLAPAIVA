@@ -25,30 +25,37 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ManageProductsPage() {
-  const { user, isLoading: authIsLoading } = useAuth(); // user now comes from Firebase Auth via context
+  const { user, isLoading: authIsLoading } = useAuth();
   const router = useRouter();
   const { products, removeProduct, isLoading: productsLoading, isMutating } = useProducts();
   const { toast } = useToast();
-
 
   useEffect(() => {
     if (!authIsLoading) {
       if (!user) {
         toast({ title: "Acesso Negado", description: "Faça login para acessar esta página.", variant: "destructive" });
         router.push('/login?redirect=/manage');
-      } else if (user.role !== 'admin') {
-        toast({ title: "Acesso Negado", description: "Você não tem permissão para acessar esta página.", variant: "destructive" });
-        router.push('/'); 
+      } else if (user.role !== 'admin' || user.status !== 'approved') {
+        let description = "Você não tem permissão para acessar esta página.";
+        if (user.status === 'pending') {
+          description = "Sua conta de administrador está pendente de aprovação final.";
+        } else if (user.status === 'rejected') {
+          description = "Sua conta foi rejeitada.";
+        } else if (user.role !== 'admin') {
+           description = "Você não tem permissão de administrador.";
+        }
+        toast({ title: "Acesso Negado", description, variant: "destructive" });
+        router.push(user.status === 'pending' || user.status === 'rejected' ? '/login' : '/');
       }
     }
   }, [user, authIsLoading, router, toast]);
 
   const handleDelete = (id: string, imageUrl: string, productName?: string) => {
-    removeProduct(id, imageUrl, productName); 
+    removeProduct(id, imageUrl, productName);
   };
 
-  // Improved loading state: covers auth loading, redirection, and initial product loading for admins
-  if (authIsLoading || (!user && !authIsLoading) || (user && user.role !== 'admin' && !authIsLoading) ) {
+  // Improved loading state
+  if (authIsLoading || (!user && !authIsLoading) || (user && (user.role !== 'admin' || user.status !== 'approved') && !authIsLoading) ) {
     return (
       <div className="space-y-12">
         <section>
@@ -79,10 +86,9 @@ export default function ManageProductsPage() {
       </div>
     );
   }
-  
-  // This check is for users who might have somehow bypassed the useEffect redirect
-  // or if the state updates in a way that useEffect hasn't caught yet.
-  if (!user || user.role !== 'admin') {
+
+  // Final check for user role and status after loading
+  if (!user || user.role !== 'admin' || user.status !== 'approved') {
      return (
         <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
             <p className="text-primary text-xl">Redirecionando...</p>
@@ -101,6 +107,13 @@ export default function ManageProductsPage() {
 
       <section>
         <h3 className="text-3xl font-headline text-foreground mb-8 text-center">Produtos Cadastrados</h3>
+        {/* Placeholder for future user management section */}
+        {/* 
+        <div className="my-8 p-4 border border-dashed border-primary rounded-lg text-center">
+          <h4 className="text-2xl font-headline text-primary mb-2">Gerenciamento de Usuários</h4>
+          <p className="text-muted-foreground">Em breve: Ações para aprovar ou visualizar usuários pendentes.</p>
+        </div>
+        */}
         
         {productsLoading && products.length === 0 && (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

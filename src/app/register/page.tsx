@@ -10,27 +10,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, LogIn } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState(''); // For displayName
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { register, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { toast } = useToast(); // To potentially show local messages if needed
 
   useEffect(() => {
     if (!authLoading && user) {
-      // If user is already logged in (e.g. after successful registration), redirect based on role
-      if (user.role === 'admin') {
-        router.push('/manage');
-      } else {
-        router.push('/');
+      // AuthContext.onAuthStateChanged will show toasts for pending/rejected.
+      // We only redirect if approved.
+      if (user.status === 'approved') {
+        if (user.role === 'admin') {
+          router.push('/manage');
+        } else {
+          router.push('/');
+        }
+      } else if (user.status === 'pending') {
+        // User remains on register page (or could be redirected to /awaiting-approval)
+        // Toast is handled by AuthContext
+      } else if (user.status === 'rejected') {
+        // User remains on register page
+        // Toast is handled by AuthContext
       }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, toast]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,13 +52,16 @@ export default function RegisterPage() {
     setError('');
     setIsSubmitting(true);
     const success = await register(email, password, username);
-    // Redirection is handled by useEffect if registration is successful and user state updates
+    // If registration call was successful, AuthContext.register shows a success/pending toast.
+    // onAuthStateChanged in AuthContext will update user state.
+    // The useEffect above will handle redirection if status becomes 'approved'.
     if (!success) {
-      setIsSubmitting(false); // Only set to false if registration failed, otherwise useEffect handles it
+      setIsSubmitting(false); // Only set to false if registration call failed (AuthContext.register shows error toast)
     }
+    // Don't setIsSubmitting(false) on success, as redirection or status messages will occur.
   };
 
-  if (authLoading && !user) { // Show loading only if not yet redirected
+  if (authLoading && !user) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
@@ -55,9 +69,12 @@ export default function RegisterPage() {
     );
   }
 
-  // If user becomes available (logged in), useEffect will redirect.
-  // This helps prevent flicker if user is already logged in from a previous session.
-  if (user) {
+  // If user is loaded but status is pending/rejected, they should not see "Redirecionando..."
+  if (user && user.status !== 'approved' && !authLoading) {
+     // User is loaded, but not approved. The useEffect handles toasts.
+     // They should remain on the register page or be on a dedicated info page.
+  } else if (user && user.status === 'approved' && !authLoading) {
+    // User is approved and loaded, useEffect will redirect.
      return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Redirecionando...</p>
@@ -71,7 +88,7 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline text-foreground">Criar Conta</CardTitle>
           <CardDescription className="text-muted-foreground font-body">
-            Crie sua conta para visualizar preços e mais.
+            Crie sua conta para visualizar preços e mais. Seu cadastro passará por aprovação.
           </CardDescription>
         </CardHeader>
         <CardContent>

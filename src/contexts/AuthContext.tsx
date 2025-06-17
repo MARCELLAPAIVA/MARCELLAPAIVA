@@ -5,16 +5,18 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-import type { User as AppUser } from '@/lib/types'; 
-import { auth as firebaseAuthService } from '@/lib/firebase'; 
-import { 
-  onAuthStateChanged, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+import type { User as AppUser, UserStatus, UserRole } from '@/lib/types';
+import { auth as firebaseAuthService } from '@/lib/firebase';
+import {
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  type User as FirebaseUser 
+  type User as FirebaseUser
 } from 'firebase/auth';
+import { getUserData, setUserData } from '@/lib/userService'; // Import user service
+import { serverTimestamp } from 'firebase/firestore';
 
 interface AuthContextType {
   user: AppUser | null;
@@ -26,13 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// IMPORTANTE: Mantenha esta lista atualizada com os emails dos usuários
-// que devem ter privilégios de administrador.
-// Qualquer usuário que se registrar pelo site e não estiver nesta lista
-// terá o papel 'client'.
-// Certifique-se de que os emails aqui correspondem aos usuários que você
-// adicionou manualmente no Firebase Authentication para serem administradores.
-const ADMIN_EMAILS = ['mvp@mttabacaria.com', 'msp@mttabacaria.com', 'jpv@mttabacaria.com', 'phv@mttabacaria.com']; 
+const ADMIN_EMAILS = ['mvp@mttabacaria.com', 'msp@mttabacaria.com', 'jpv@mttabacaria.com', 'phv@mttabacaria.com'];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -42,22 +38,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!firebaseAuthService) {
-      console.error("AuthContext: Firebase Auth service (firebaseAuthService) is not properly initialized. Check Firebase configuration in src/lib/firebase.ts and ensure Authentication is enabled in the Firebase console. Auth features will not work.");
+      console.error("AuthContext: Firebase Auth service (firebaseAuthService) is not properly initialized.");
       setIsLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(firebaseAuthService, (firebaseUser: FirebaseUser | null) => {
-      setIsLoading(true); 
+    const unsubscribe = onAuthStateChanged(firebaseAuthService, async (firebaseUser: FirebaseUser | null) => {
+      setIsLoading(true);
       if (firebaseUser) {
-        // A atribuição de papel é feita aqui, baseada na lista ADMIN_EMAILS
-        const role = ADMIN_EMAILS.includes(firebaseUser.email || '') ? 'admin' : 'client';
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          role: role,
-        });
+        const userDataFromFirestore = await getUserData(firebaseUser.uid);
+
+        if (userDataFromFirestore) {
+          const appUser: AppUser = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            role: userDataFromFirestore.role,
+            status: userDataFromFirestore.status,
+            createdAt: userDataFromFirestore.createdAt,
+          };
+          setUser(appUser);
+          
+          // Handle redirection/toasts based on status after user state is set
+          if (appUser.status === 'pending') {
+             toast({ title: "Conta Pendente", description: "Sua conta está aguardando aprovação do administrador.", variant: "default", duration: 7000 });
+          } else if (appUser.status === 'rejected') {
+             toast({ title: "Conta Rejeitada", description: "Sua conta foi rejeitada. Entre em contato com o suporte.", variant: "destructive", duration: 7000 });
+          }
+
+        } else {
+          // User exists in Auth, but not in Firestore.
+          // This could be an admin pre-registered in Auth, or an error.
+          const isUserAdminByEmail = ADMIN_EMAILS.includes(firebaseUser.email || '');
+          if (isUserAdminByEmail) {
+            const adminRole: UserRole = 'admin';
+            const adminStatus: UserStatus = 'approved';
+            await setUserData(firebaseUser.uid, {
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: adminRole,
+              status: adminStatus,
+              createdAt: serverTimestamp(),
+            });
+            const newAdminUser: AppUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: adminRole,
+              status: adminStatus,
+            };
+            setUser(newAdminUser);
+          } else {
+            // Non-admin user in Auth without Firestore doc - this is an inconsistent state.
+            console.error(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not in ADMIN_EMAILS. Logging out.`);
+            toast({ title: "Erro de Conta", description: "Os dados da sua conta estão inconsistentes. Faça o registro novamente ou contate o suporte.", variant: "destructive", duration: 7000 });
+            await signOut(firebaseAuthService); // Ensure logout
+            setUser(null);
+          }
+        }
       } else {
         setUser(null);
       }
@@ -65,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []); 
+  }, [toast]); // Added toast to dependency array
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
@@ -77,15 +115,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
       await updateProfile(userCredential.user, { displayName: usernameInput });
-      
-      // O usuário será atualizado pelo onAuthStateChanged. 
-      // O papel será 'client' por padrão, ou 'admin' se o email estiver em ADMIN_EMAILS, conforme a lógica em onAuthStateChanged.
-      toast({
-        title: "Registro Bem-Sucedido!",
-        description: "Sua conta foi criada. Você já está logado.",
-        variant: "default", 
+
+      const isUserAdmin = ADMIN_EMAILS.includes(emailInput);
+      const initialRole: UserRole = isUserAdmin ? 'admin' : 'client';
+      const initialStatus: UserStatus = isUserAdmin ? 'approved' : 'pending';
+
+      await setUserData(userCredential.user.uid, {
+        email: userCredential.user.email,
+        displayName: usernameInput,
+        role: initialRole,
+        status: initialStatus,
+        createdAt: serverTimestamp(),
       });
-      return true;
+      
+      // onAuthStateChanged will handle setting the user state and showing appropriate toasts based on status.
+      // Do not redirect here, as onAuthStateChanged will trigger and then page useEffects will handle redirection.
+
+      if (initialStatus === 'pending') {
+        toast({
+          title: "Cadastro Realizado!",
+          description: "Sua conta foi criada e está aguardando aprovação do administrador.",
+          variant: "default",
+          duration: 7000,
+        });
+      } else { // Admin self-registering
+         toast({
+          title: "Registro Bem-Sucedido!",
+          description: "Sua conta de administrador foi criada e está ativa.",
+          variant: "default",
+        });
+      }
+      // User state will be updated by onAuthStateChanged
+      return true; 
     } catch (error: any) {
       console.error("AuthContext: Firebase registration error:", error);
       let description = "Ocorreu um erro desconhecido durante o registro.";
@@ -101,7 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]); 
+  }, [toast]);
 
   const login = useCallback(async (emailInput: string, passwordInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
@@ -112,12 +173,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
-      // O usuário será atualizado pelo onAuthStateChanged, que definirá o papel corretamente.
+      // onAuthStateChanged will handle fetching user data from Firestore, including status,
+      // and setting the user state. Page useEffects will then handle redirection based on status.
       return true;
     } catch (error: any) {
-      console.error("AuthContext: Firebase login error:", error); // Linha onde o erro é logado
+      console.error("AuthContext: Firebase login error:", error);
       let description = "Email ou senha inválidos. Verifique suas credenciais.";
-       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         description = "Email ou senha incorretos. Tente novamente.";
       } else if (error.code === 'auth/invalid-email') {
         description = "O formato do email fornecido não é válido.";
@@ -127,7 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]); 
+  }, [toast]);
 
   const logout = useCallback(async () => {
     if (!firebaseAuthService) {
@@ -136,7 +198,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signOut(firebaseAuthService);
-      router.push('/login'); 
+      setUser(null); // Clear user state immediately
+      router.push('/login');
     } catch (error) {
       console.error("AuthContext: Firebase logout error:", error);
       toast({
@@ -163,4 +226,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

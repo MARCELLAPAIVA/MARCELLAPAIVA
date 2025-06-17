@@ -1,4 +1,7 @@
 
+export type UserStatus = 'pending' | 'approved' | 'rejected';
+export type UserRole = 'admin' | 'client';
+
 export interface Product {
   id: string; // Firestore document ID
   description: string;
@@ -13,5 +16,7 @@ export interface User {
   uid: string; // Firebase Auth User ID
   email: string | null;
   displayName: string | null;
-  role: 'admin' | 'client';
+  role: UserRole;
+  status: UserStatus;
+  createdAt?: number; // Timestamp for when user doc was created
 }
