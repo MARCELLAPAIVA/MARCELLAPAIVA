@@ -18,10 +18,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Load cart from localStorage on initial render if user is approved
   useEffect(() => {
-    if (isCartVisibleToUser && typeof window !== 'undefined') {
+    if (isCartVisibleToUser && typeof window !== 'undefined' && user?.uid) {
       const storedCart = localStorage.getItem(`cart-${user.uid}`);
       if (storedCart) {
-        setCartItems(JSON.parse(storedCart));
+        try {
+            const parsedCart = JSON.parse(storedCart);
+            // Basic validation to ensure it's an array (of CartItem)
+            if (Array.isArray(parsedCart)) {
+                 setCartItems(parsedCart);
+            } else {
+                console.warn("CartContext: Invalid cart data found in localStorage. Clearing.");
+                localStorage.removeItem(`cart-${user.uid}`);
+                setCartItems([]);
+            }
+        } catch (error) {
+            console.error("CartContext: Failed to parse cart from localStorage.", error);
+            localStorage.removeItem(`cart-${user.uid}`); // Clear corrupted data
+            setCartItems([]);
+        }
       }
     } else if (typeof window !== 'undefined') {
       // Clear cart if user is not visible (logged out, pending, etc.)
@@ -52,30 +66,38 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = useCallback((product: Product) => {
     if (!isCartVisibleToUser) {
-      toast({ title: "Acesso Negado", description: "Faça login com uma conta aprovada para adicionar itens ao orçamento.", variant: "destructive" });
+      setTimeout(() => {
+        toast({ title: "Acesso Negado", description: "Faça login com uma conta aprovada para adicionar itens ao orçamento.", variant: "destructive" });
+      }, 0);
       return;
     }
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.product.id === product.id);
       if (existingItem) {
-        toast({ title: "Item Atualizado", description: `${product.description.substring(0,20)}... quantidade aumentada.`, variant: "default" });
+        setTimeout(() => {
+          toast({ title: "Item Atualizado", description: `${product.description.substring(0,20)}... quantidade aumentada.`, variant: "default" });
+        }, 0);
         return prevItems.map(item =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      toast({ title: "Item Adicionado", description: `${product.description.substring(0,20)}... adicionado ao orçamento.`, variant: "default" });
+      setTimeout(() => {
+        toast({ title: "Item Adicionado", description: `${product.description.substring(0,20)}... adicionado ao orçamento.`, variant: "default" });
+      }, 0);
       return [...prevItems, { product, quantity: 1 }];
     });
-  }, [isCartVisibleToUser, toast]);
+  }, [isCartVisibleToUser, toast]); // Removed product from dependencies as it's an argument
 
   const removeFromCart = useCallback((productId: string) => {
     if (!isCartVisibleToUser) return;
     setCartItems(prevItems => {
       const itemToRemove = prevItems.find(item => item.product.id === productId);
       if (itemToRemove) {
-         toast({ title: "Item Removido", description: `${itemToRemove.product.description.substring(0,20)}... removido do orçamento.`, variant: "default" });
+         setTimeout(() => {
+            toast({ title: "Item Removido", description: `${itemToRemove.product.description.substring(0,20)}... removido do orçamento.`, variant: "default" });
+         }, 0);
       }
       return prevItems.filter(item => item.product.id !== productId);
     });
@@ -84,7 +106,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (!isCartVisibleToUser) return;
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId); // This already handles toast via setTimeout
       return;
     }
     setCartItems(prevItems =>
@@ -100,7 +122,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (user?.uid && typeof window !== 'undefined') {
         localStorage.removeItem(`cart-${user.uid}`);
     }
-    toast({ title: "Orçamento Limpo", description: "Todos os itens foram removidos do seu orçamento.", variant: "default" });
+    setTimeout(() => {
+      toast({ title: "Orçamento Limpo", description: "Todos os itens foram removidos do seu orçamento.", variant: "default" });
+    }, 0);
   }, [isCartVisibleToUser, toast, user?.uid]);
 
   const getTotalItems = useCallback(() => {
@@ -138,3 +162,4 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
+
