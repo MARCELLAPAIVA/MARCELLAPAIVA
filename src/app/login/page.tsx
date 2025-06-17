@@ -24,17 +24,17 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       if (user.status === 'pending') {
-        // Toast is handled by AuthContext's onAuthStateChanged
-        // No redirection needed, user stays on login page or wherever they are.
-        // Or redirect to a specific "awaiting approval" page if it exists:
-        // router.push('/awaiting-approval');
+        // Toast is handled by AuthContext's onAuthStateChanged or register function
+        // User remains on login/register page or a dedicated "awaiting approval" page.
+        // No direct redirection from here is needed for 'pending'.
         return;
       }
       if (user.status === 'rejected') {
         // Toast is handled by AuthContext's onAuthStateChanged
+        // User remains on login/register page.
         return;
       }
-      // Only redirect if approved
+      // Only redirect if 'approved'
       if (user.status === 'approved') {
         if (user.role === 'admin') {
           router.push('/manage');
@@ -56,27 +56,19 @@ export default function LoginPage() {
     if (!success) {
       setIsSubmitting(false); // Only set to false if login initiation failed
     }
-    // Don't setIsSubmitting(false) on success, as redirection or status messages will occur.
+    // Don't setIsSubmitting(false) on success, as redirection or status messages will occur via useEffect.
   };
 
-  if (authLoading && !user) {
+  if (authLoading && !user) { // Show loading only if no user data yet and auth is loading
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
       </div>
     );
   }
-
-  // If user is loaded but status is pending/rejected, they should not see "Redirecionando..."
-  // unless explicitly redirected to an info page. For now, they stay on login.
-  if (user && user.status !== 'approved' && !authLoading) {
-    // User is loaded, but not approved. The useEffect handles toasts.
-    // They should remain on the login page or be on a dedicated info page.
-    // This return is to prevent rendering the form if user is loaded but not approved.
-    // It assumes toasts from AuthContext are sufficient.
-    // If you create an /awaiting-approval page, redirect there in useEffect.
-  } else if (user && user.status === 'approved' && !authLoading) {
-    // User is approved and loaded, useEffect will redirect.
+  
+  // If user is loaded and approved, they will be redirected by useEffect. Show "Redirecionando..."
+  if (user && user.status === 'approved' && !authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Redirecionando...</p>
@@ -84,6 +76,9 @@ export default function LoginPage() {
     );
   }
 
+  // If user is loaded but status is pending/rejected, they should not see "Redirecionando..."
+  // They remain on the login page to see toasts from AuthContext.
+  // The form is rendered below for them to retry or see messages.
 
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-250px)] py-12">
@@ -121,7 +116,7 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={isSubmitting || authLoading}>
-              {isSubmitting ? "Entrando..." : (
+              {isSubmitting || (authLoading && !user) ? "Entrando..." : ( // Show "Entrando..." if submitting or initial auth load without user
                 <>
                   <LogIn size={20} className="mr-2" />
                   Entrar
@@ -144,3 +139,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

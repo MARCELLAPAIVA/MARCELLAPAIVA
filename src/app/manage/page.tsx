@@ -54,7 +54,8 @@ export default function ManageProductsPage() {
     removeProduct(id, imageUrl, productName);
   };
 
-  // Improved loading state
+  // Improved loading state: show skeleton if auth is loading OR (no user and auth check is done) OR (user exists but not approved admin and auth check is done)
+  // This covers scenarios where redirection is about to happen or access is denied.
   if (authIsLoading || (!user && !authIsLoading) || (user && (user.role !== 'admin' || user.status !== 'approved') && !authIsLoading) ) {
     return (
       <div className="space-y-12">
@@ -87,7 +88,8 @@ export default function ManageProductsPage() {
     );
   }
 
-  // Final check for user role and status after loading
+  // Final check for user role and status after loading, though useEffect should handle redirection.
+  // This is a fallback if rendering happens before useEffect's redirect.
   if (!user || user.role !== 'admin' || user.status !== 'approved') {
      return (
         <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -107,13 +109,13 @@ export default function ManageProductsPage() {
 
       <section>
         <h3 className="text-3xl font-headline text-foreground mb-8 text-center">Produtos Cadastrados</h3>
-        {/* Placeholder for future user management section */}
-        {/* 
-        <div className="my-8 p-4 border border-dashed border-primary rounded-lg text-center">
+        {/* Placeholder for future user management section for approving users */}
+        
+        <div className="my-8 p-4 border border-dashed border-primary rounded-lg text-center bg-card shadow-md">
           <h4 className="text-2xl font-headline text-primary mb-2">Gerenciamento de Usuários</h4>
           <p className="text-muted-foreground">Em breve: Ações para aprovar ou visualizar usuários pendentes.</p>
         </div>
-        */}
+        
         
         {productsLoading && products.length === 0 && (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -227,3 +229,4 @@ export default function ManageProductsPage() {
     </div>
   );
 }
+

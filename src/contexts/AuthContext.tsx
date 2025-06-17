@@ -28,7 +28,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// IMPORTANTE: Mantenha esta lista atualizada com os emails dos usuários
+// que devem ter privilégios de administrador.
+// Qualquer usuário que se registrar pelo site e não estiver nesta lista
+// terá o papel 'client' e status 'pending' (aguardando aprovação).
 const ADMIN_EMAILS = ['mvp@mttabacaria.com', 'msp@mttabacaria.com', 'jpv@mttabacaria.com', 'phv@mttabacaria.com'];
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -68,7 +73,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         } else {
           // User exists in Auth, but not in Firestore.
-          // This could be an admin pre-registered in Auth, or an error.
           const isUserAdminByEmail = ADMIN_EMAILS.includes(firebaseUser.email || '');
           if (isUserAdminByEmail) {
             const adminRole: UserRole = 'admin';
@@ -89,10 +93,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             setUser(newAdminUser);
           } else {
-            // Non-admin user in Auth without Firestore doc - this is an inconsistent state.
-            console.error(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not in ADMIN_EMAILS. Logging out.`);
-            toast({ title: "Erro de Conta", description: "Os dados da sua conta estão inconsistentes. Faça o registro novamente ou contate o suporte.", variant: "destructive", duration: 7000 });
-            await signOut(firebaseAuthService); // Ensure logout
+            // Non-admin user in Auth without Firestore doc - this is an inconsistent state or a new client registration that hasn't populated Firestore yet.
+            // If it was a registration, AuthContext.register would have handled it.
+            // This case implies an existing Auth user without a Firestore doc, not on admin list.
+            console.error(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not in ADMIN_EMAILS. This could be a partially completed registration or an anomaly. Logging out for safety.`);
+            toast({ title: "Erro de Conta", description: "Não foi possível carregar os dados da sua conta. Por favor, tente fazer login novamente ou registre-se.", variant: "destructive", duration: 7000 });
+            await signOut(firebaseAuthService); 
             setUser(null);
           }
         }
@@ -103,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [toast]); // Added toast to dependency array
+  }, [toast]); 
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
@@ -118,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const isUserAdmin = ADMIN_EMAILS.includes(emailInput);
       const initialRole: UserRole = isUserAdmin ? 'admin' : 'client';
-      const initialStatus: UserStatus = isUserAdmin ? 'approved' : 'pending';
+      const initialStatus: UserStatus = isUserAdmin ? 'approved' : 'pending'; // Clientes ficam pendentes
 
       await setUserData(userCredential.user.uid, {
         email: userCredential.user.email,
@@ -128,9 +134,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         createdAt: serverTimestamp(),
       });
       
-      // onAuthStateChanged will handle setting the user state and showing appropriate toasts based on status.
-      // Do not redirect here, as onAuthStateChanged will trigger and then page useEffects will handle redirection.
-
       if (initialStatus === 'pending') {
         toast({
           title: "Cadastro Realizado!",
@@ -138,14 +141,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           variant: "default",
           duration: 7000,
         });
-      } else { // Admin self-registering
+      } else { // Admin (auto-approved)
          toast({
-          title: "Registro Bem-Sucedido!",
+          title: "Registro de Administrador Bem-Sucedido!",
           description: "Sua conta de administrador foi criada e está ativa.",
           variant: "default",
         });
       }
-      // User state will be updated by onAuthStateChanged
+      // User state will be updated by onAuthStateChanged which listens to Firebase Auth state.
+      // signInWithEmailAndPassword is not needed here after registration, onAuthStateChanged handles it.
       return true; 
     } catch (error: any) {
       console.error("AuthContext: Firebase registration error:", error);
@@ -173,8 +177,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
-      // onAuthStateChanged will handle fetching user data from Firestore, including status,
-      // and setting the user state. Page useEffects will then handle redirection based on status.
+      // onAuthStateChanged will handle fetching user data from Firestore (including status)
+      // and setting the user state. Page useEffects will then handle redirection based on this status.
       return true;
     } catch (error: any) {
       console.error("AuthContext: Firebase login error:", error);
@@ -198,7 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signOut(firebaseAuthService);
-      setUser(null); // Clear user state immediately
+      setUser(null); 
       router.push('/login');
     } catch (error) {
       console.error("AuthContext: Firebase logout error:", error);
@@ -226,3 +230,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

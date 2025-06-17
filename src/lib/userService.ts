@@ -71,3 +71,4 @@ export const setUserData = async (uid: string, data: Partial<Omit<UserDocument, 
     return false;
   }
 };
+

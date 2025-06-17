@@ -20,3 +20,4 @@ export interface User {
   status: UserStatus;
   createdAt?: number; // Timestamp for when user doc was created
 }
+

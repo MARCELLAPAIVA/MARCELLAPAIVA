@@ -21,12 +21,12 @@ export default function RegisterPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const { toast } = useToast(); // To potentially show local messages if needed
+  const { toast } = useToast(); 
 
   useEffect(() => {
     if (!authLoading && user) {
-      // AuthContext.onAuthStateChanged will show toasts for pending/rejected.
-      // We only redirect if approved.
+      // AuthContext.register or onAuthStateChanged will show toasts for pending/rejected.
+      // We only redirect if 'approved'.
       if (user.status === 'approved') {
         if (user.role === 'admin') {
           router.push('/manage');
@@ -34,14 +34,13 @@ export default function RegisterPage() {
           router.push('/');
         }
       } else if (user.status === 'pending') {
-        // User remains on register page (or could be redirected to /awaiting-approval)
-        // Toast is handled by AuthContext
+        // User remains on register page. Toast is handled by AuthContext.
+        // If registration was successful, AuthContext.register shows "aguardando aprovação" toast.
       } else if (user.status === 'rejected') {
-        // User remains on register page
-        // Toast is handled by AuthContext
+        // User remains on register page. Toast is handled by AuthContext.
       }
     }
-  }, [user, authLoading, router, toast]);
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,16 +51,19 @@ export default function RegisterPage() {
     setError('');
     setIsSubmitting(true);
     const success = await register(email, password, username);
-    // If registration call was successful, AuthContext.register shows a success/pending toast.
+    // If registration call was successful (returned true), AuthContext.register shows a success/pending toast.
     // onAuthStateChanged in AuthContext will update user state.
-    // The useEffect above will handle redirection if status becomes 'approved'.
+    // The useEffect above will handle redirection if status eventually becomes 'approved'.
     if (!success) {
       setIsSubmitting(false); // Only set to false if registration call failed (AuthContext.register shows error toast)
     }
-    // Don't setIsSubmitting(false) on success, as redirection or status messages will occur.
+    // Don't setIsSubmitting(false) on success, as status messages or redirection will occur.
+    // If status is 'pending', user stays on this page, button remains disabled until message is seen.
+    // If register returns true (meaning it initiated), we can consider clearing form or keeping button disabled.
+    // For now, if 'pending', they will see the toast and button might re-enable after authLoading is false.
   };
 
-  if (authLoading && !user) {
+  if (authLoading && !user) { // Show loading only if no user data yet and auth is loading
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
@@ -69,11 +71,7 @@ export default function RegisterPage() {
     );
   }
 
-  // If user is loaded but status is pending/rejected, they should not see "Redirecionando..."
-  if (user && user.status !== 'approved' && !authLoading) {
-     // User is loaded, but not approved. The useEffect handles toasts.
-     // They should remain on the register page or be on a dedicated info page.
-  } else if (user && user.status === 'approved' && !authLoading) {
+  if (user && user.status === 'approved' && !authLoading) {
     // User is approved and loaded, useEffect will redirect.
      return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -81,6 +79,9 @@ export default function RegisterPage() {
       </div>
     );
   }
+  
+  // If user is loaded but status is pending/rejected, or no user and not loading, render the form.
+  // Toasts for pending/rejected are handled by AuthContext.
 
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-250px)] py-12">
@@ -144,7 +145,7 @@ export default function RegisterPage() {
             </div>
             {error && <p className="text-sm text-destructive font-body">{error}</p>}
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={isSubmitting || authLoading}>
-              {isSubmitting ? "Criando conta..." : (
+              {isSubmitting || (authLoading && !user) ? "Criando conta..." : ( // Show "Criando..." if submitting or initial auth load without user
                 <>
                   <UserPlus size={20} className="mr-2" />
                   Criar Conta
@@ -167,3 +168,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+
