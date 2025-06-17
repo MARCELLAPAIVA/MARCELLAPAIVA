@@ -26,7 +26,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// IMPORTANT: Update with actual admin emails for registration and role assignment
+// IMPORTANTE: Mantenha esta lista atualizada com os emails dos usuários
+// que devem ter privilégios de administrador.
+// Qualquer usuário que se registrar pelo site e não estiver nesta lista
+// terá o papel 'client'.
 const ADMIN_EMAILS = ['mvp@tabacaria.com', 'msp@tabacaria.com']; 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -43,8 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const unsubscribe = onAuthStateChanged(firebaseAuthService, (firebaseUser: FirebaseUser | null) => {
-      setIsLoading(true); // Set loading true while processing auth state
+      setIsLoading(true); 
       if (firebaseUser) {
+        // A atribuição de papel é feita aqui, baseada na lista ADMIN_EMAILS
         const role = ADMIN_EMAILS.includes(firebaseUser.email || '') ? 'admin' : 'client';
         setUser({
           uid: firebaseUser.uid,
@@ -59,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+  }, []); 
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
@@ -72,13 +76,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
       await updateProfile(userCredential.user, { displayName: usernameInput });
       
-      // setUser will be updated by onAuthStateChanged, but we can show toast immediately
+      // O usuário será atualizado pelo onAuthStateChanged. 
+      // O papel será 'client' por padrão, ou 'admin' se o email estiver em ADMIN_EMAILS, conforme a lógica em onAuthStateChanged.
       toast({
         title: "Registro Bem-Sucedido!",
         description: "Sua conta foi criada. Você já está logado.",
-        variant: "default", // Changed from "success" to "default" as per ShadCN
+        variant: "default", 
       });
-      // No need to manually set user here, onAuthStateChanged will handle it.
       return true;
     } catch (error: any) {
       console.error("AuthContext: Firebase registration error:", error);
@@ -95,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]); // router is not needed here
+  }, [toast]); 
 
   const login = useCallback(async (emailInput: string, passwordInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
@@ -106,8 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
-      // setUser will be updated by onAuthStateChanged
-      // Toast for login success can be shown here or after redirection based on role (handled in login page)
+      // O usuário será atualizado pelo onAuthStateChanged, que definirá o papel corretamente.
       return true;
     } catch (error: any) {
       console.error("AuthContext: Firebase login error:", error);
@@ -117,24 +120,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else if (error.code === 'auth/invalid-email') {
         description = "O formato do email fornecido não é válido.";
       }
-      // Consider more specific error codes if needed: e.g. auth/too-many-requests
       toast({ title: "Falha no Login", description, variant: "destructive" });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [toast]); // router is not needed here
+  }, [toast]); 
 
   const logout = useCallback(async () => {
     if (!firebaseAuthService) {
       console.error("AuthContext: Firebase Auth service not initialized. Cannot logout user.");
-      // Optionally, show a toast here if desired, though usually logout errors are less critical for user UX
     }
     setIsLoading(true);
     try {
       await signOut(firebaseAuthService);
-      // setUser will be set to null by onAuthStateChanged
-      router.push('/login'); // Redirect after logout
+      router.push('/login'); 
     } catch (error) {
       console.error("AuthContext: Firebase logout error:", error);
       toast({
