@@ -93,13 +93,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             setUser(newAdminUser);
           } else {
-            // Non-admin user in Auth without Firestore doc - this is an inconsistent state or a new client registration that hasn't populated Firestore yet.
-            // If it was a registration, AuthContext.register would have handled it.
-            // This case implies an existing Auth user without a Firestore doc, not on admin list.
-            console.error(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not in ADMIN_EMAILS. This could be a partially completed registration or an anomaly. Logging out for safety.`);
-            toast({ title: "Erro de Conta", description: "Não foi possível carregar os dados da sua conta. Por favor, tente fazer login novamente ou registre-se.", variant: "destructive", duration: 7000 });
-            await signOut(firebaseAuthService); 
-            setUser(null);
+            // Non-admin user in Auth without Firestore doc.
+            // Assume this is a client whose Firestore document creation might have failed during registration.
+            // Create a 'pending' client document for them.
+            console.warn(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not an admin. Creating a 'pending' client document.`);
+            const clientRole: UserRole = 'client';
+            const clientStatus: UserStatus = 'pending';
+            await setUserData(firebaseUser.uid, {
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName, 
+              role: clientRole,
+              status: clientStatus,
+              createdAt: serverTimestamp(),
+            });
+            const newClientUser: AppUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: clientRole,
+              status: clientStatus,
+            };
+            setUser(newClientUser);
+            // The existing toast for 'pending' status will be triggered when appUser.status is 'pending' above.
           }
         }
       } else {
