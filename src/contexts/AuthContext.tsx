@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-import type { User as AppUser } from '@/lib/types'; // Renamed to avoid conflict
-import { auth } from '@/lib/firebase';
+import type { User as AppUser } from '@/lib/types'; 
+import { auth as firebaseAuthService } from '@/lib/firebase'; 
 import { 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
@@ -26,8 +26,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define admin emails here. Users registering with these emails will get 'admin' role.
-const ADMIN_EMAILS = ['mvp@tabacaria.com', 'msp@tabacaria.com']; // IMPORTANT: Update with actual admin emails
+// IMPORTANT: Update with actual admin emails for registration and role assignment
+const ADMIN_EMAILS = ['mvp@tabacaria.com', 'msp@tabacaria.com']; 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -36,7 +36,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    if (!firebaseAuthService) {
+      console.error("Firebase Auth service (firebaseAuthService) is not properly initialized. Check Firebase configuration in src/lib/firebase.ts and ensure Authentication is enabled in the Firebase console. Auth features will not work.");
+      setIsLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(firebaseAuthService, (firebaseUser: FirebaseUser | null) => {
       setIsLoading(true);
       if (firebaseUser) {
         const role = ADMIN_EMAILS.includes(firebaseUser.email || '') ? 'admin' : 'client';
@@ -56,17 +62,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
+    if (!firebaseAuthService) {
+      console.error("Firebase Auth service not initialized. Cannot register user.");
+      toast({ title: "Erro de Configuração", description: "Não foi possível conectar ao serviço de autenticação.", variant: "destructive" });
+      return false;
+    }
     setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, emailInput, passwordInput);
+      const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
       await updateProfile(userCredential.user, { displayName: usernameInput });
       
-      // Update local user state immediately for better UX, onAuthStateChanged will also fire
       const role = ADMIN_EMAILS.includes(userCredential.user.email || '') ? 'admin' : 'client';
       setUser({ 
         uid: userCredential.user.uid, 
         email: userCredential.user.email, 
-        displayName: usernameInput, // or userCredential.user.displayName after updateProfile
+        displayName: usernameInput,
         role: role 
       });
 
@@ -75,53 +85,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Sua conta foi criada. Você já está logado.",
         variant: "default",
       });
-      setIsLoading(false);
       return true;
     } catch (error: any) {
       console.error("Firebase registration error:", error);
-      let description = "Ocorreu um erro desconhecido.";
+      let description = "Ocorreu um erro desconhecido durante o registro.";
       if (error.code === 'auth/email-already-in-use') {
-        description = "Este email já está em uso.";
+        description = "Este email já está em uso por outra conta.";
       } else if (error.code === 'auth/weak-password') {
         description = "A senha é muito fraca. Use pelo menos 6 caracteres.";
       } else if (error.code === 'auth/invalid-email') {
-        description = "O email fornecido não é válido.";
+        description = "O formato do email fornecido não é válido.";
       }
-      toast({
-        title: "Falha no Registro",
-        description: description,
-        variant: "destructive",
-      });
-      setIsLoading(false);
+      toast({ title: "Falha no Registro", description, variant: "destructive" });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   }, [toast]);
 
   const login = useCallback(async (emailInput: string, passwordInput: string): Promise<boolean> => {
+    if (!firebaseAuthService) {
+      console.error("Firebase Auth service not initialized. Cannot login user.");
+      toast({ title: "Erro de Configuração", description: "Não foi possível conectar ao serviço de autenticação.", variant: "destructive" });
+      return false;
+    }
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, emailInput, passwordInput);
-      // onAuthStateChanged will handle setting the user state
-      // No need to show success toast here, redirection will indicate success
-      setIsLoading(false);
+      await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
       return true;
     } catch (error: any) {
       console.error("Firebase login error:", error);
-      toast({
-        title: "Falha no Login",
-        description: "Email ou senha inválidos.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
+      let description = "Email ou senha inválidos. Verifique suas credenciais.";
+       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "Email ou senha incorretos. Tente novamente.";
+      } else if (error.code === 'auth/invalid-email') {
+        description = "O formato do email fornecido não é válido.";
+      }
+      toast({ title: "Falha no Login", description, variant: "destructive" });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   }, [toast]);
 
   const logout = useCallback(async () => {
+    if (!firebaseAuthService) {
+      console.error("Firebase Auth service not initialized. Cannot logout user.");
+    }
     setIsLoading(true);
     try {
-      await signOut(auth);
-      // onAuthStateChanged will set user to null
+      await signOut(firebaseAuthService);
       router.push('/login'); 
     } catch (error) {
       console.error("Firebase logout error:", error);
