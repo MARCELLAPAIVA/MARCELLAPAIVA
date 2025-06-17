@@ -30,6 +30,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // que devem ter privilégios de administrador.
 // Qualquer usuário que se registrar pelo site e não estiver nesta lista
 // terá o papel 'client'.
+// Certifique-se de que os emails aqui correspondem aos usuários que você
+// adicionou manualmente no Firebase Authentication para serem administradores.
 const ADMIN_EMAILS = ['mvp@tabacaria.com', 'msp@tabacaria.com']; 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
