@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // O usuário será atualizado pelo onAuthStateChanged, que definirá o papel corretamente.
       return true;
     } catch (error: any) {
-      console.error("AuthContext: Firebase login error:", error);
+      console.error("AuthContext: Firebase login error:", error); // Linha onde o erro é logado
       let description = "Email ou senha inválidos. Verifique suas credenciais.";
        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         description = "Email ou senha incorretos. Tente novamente.";
@@ -163,3 +163,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
