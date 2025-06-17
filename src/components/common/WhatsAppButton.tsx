@@ -23,12 +23,10 @@ const WhatsAppIcon = () => (
 
 
 export default function WhatsAppButton() {
-  const whatsappNumber = "21991633082"; // Updated phone number
-  const message = "Olá! Gostaria de mais informações."; // Optional pre-filled message
+  const directWhatsAppLink = "https://wa.me/5521991633082?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20os%20produtos%20de%20tabacaria";
 
   const handleClick = () => {
-    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(directWhatsAppLink, '_blank', 'noopener,noreferrer');
   };
 
   return (
