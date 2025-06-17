@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Search, Menu, X, ShieldCheck, ListFilter } from 'lucide-react'; 
+import { Search, Menu, X, ShieldCheck, ListFilter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,18 +13,18 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator"; 
-import { categories } from '@/lib/categories'; 
-import { useProducts } from '@/hooks/useProducts'; // Importar o hook useProducts
+import { Separator } from "@/components/ui/separator";
+import { categories } from '@/lib/categories';
+// O hook useProducts não é mais necessário aqui, pois o filtro é controlado pelo CategoryFilterDropdown na HomePage
 
-const ALL_CATEGORIES_VALUE = null; // Representa "Todas as Categorias"
+// const ALL_CATEGORIES_VALUE = null; // Não é mais usado aqui
 
 export default function Header() {
-  const { setSelectedCategory, selectedCategory } = useProducts(); // Usar o hook
+  // A lógica de setSelectedCategory e selectedCategory foi removida daqui.
 
-  const handleCategorySelect = (category: string | null) => {
-    setSelectedCategory(category);
-  };
+  // const handleCategorySelect = (category: string | null) => {
+  //   setSelectedCategory(category);
+  // };
 
   return (
     <header className="bg-black text-white shadow-md sticky top-0 z-50">
@@ -53,10 +53,10 @@ export default function Header() {
                 <ul className="space-y-1 p-4">
                   <li>
                     <SheetClose asChild>
+                      {/* Este botão agora apenas fecha o menu, não filtra mais */}
                       <button
-                        onClick={() => handleCategorySelect(ALL_CATEGORIES_VALUE)}
-                        className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body flex items-center
-                          ${selectedCategory === ALL_CATEGORIES_VALUE ? 'bg-primary/20 text-primary font-semibold' : 'text-foreground hover:bg-muted/50'}`}
+                        // onClick={() => handleCategorySelect(ALL_CATEGORIES_VALUE)} // Removido
+                        className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body flex items-center text-foreground hover:bg-muted/50`}
                       >
                         <ListFilter size={18} className="mr-2 opacity-70" />
                         Todas as Categorias
@@ -66,10 +66,10 @@ export default function Header() {
                   {categories.map((category) => (
                     <li key={category}>
                       <SheetClose asChild>
+                        {/* Este botão agora apenas fecha o menu, não filtra mais */}
                         <button
-                          onClick={() => handleCategorySelect(category)}
-                          className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body
-                            ${selectedCategory === category ? 'bg-primary/20 text-primary font-semibold' : 'text-foreground hover:bg-muted/50'}`}
+                          // onClick={() => handleCategorySelect(category)} // Removido
+                          className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body text-foreground hover:bg-muted/50`}
                         >
                           {category}
                         </button>
