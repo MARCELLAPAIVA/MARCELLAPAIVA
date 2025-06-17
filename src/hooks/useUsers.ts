@@ -35,7 +35,7 @@ export function useUsers() {
   //   fetchUsers({ status: 'pending' }); // Example: Fetch pending users by default
   // }, [fetchUsers]);
 
-  const changeUserStatus = useCallback(async (uid: string, newStatus: UserStatus, currentStatus?: UserStatus) => {
+  const changeUserStatus = useCallback(async (uid: string, newStatus: UserStatus, currentStatusFilter?: UserStatus) => {
     setIsMutating(true);
     const userToUpdate = users.find(u => u.uid === uid);
     const userName = userToUpdate?.displayName || userToUpdate?.email || uid;
@@ -43,16 +43,14 @@ export function useUsers() {
     try {
       const success = await updateUserStatusInFirestore(uid, newStatus);
       if (success) {
-        // Optimistically update or refetch
-        // Refetch users with the previous filter, or a specific one if a status change might affect current view
-        // For instance, if viewing 'pending', after approving, refetch 'pending'
-        // Or, more simply, refetch based on the filter that was last used to populate `users`
-        // For now, refetching all and letting the component filter is simpler
-        // This could be optimized by passing the filter to fetchUsers
-        if (currentStatus) {
-            await fetchUsers({status: currentStatus});
+        // After successfully changing the status, refetch the list of users
+        // using the same filter that was active (e.g., 'pending').
+        if (currentStatusFilter) {
+            await fetchUsers({status: currentStatusFilter});
         } else {
-            await fetchUsers(); // Fallback to fetching all if currentStatus isn't well-tracked or needed
+            // If no specific filter is known (e.g., if this function were called from another context),
+            // refetch all users or a default list.
+            await fetchUsers(); 
         }
         
         toast({
@@ -73,7 +71,7 @@ export function useUsers() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast, fetchUsers, users]);
+  }, [toast, fetchUsers, users]); // Added users to dependency array of changeUserStatus as it's used to find userToUpdate
 
   return {
     users,
