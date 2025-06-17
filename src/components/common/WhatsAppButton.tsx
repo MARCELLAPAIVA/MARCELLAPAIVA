@@ -23,7 +23,7 @@ const WhatsAppIcon = () => (
 
 
 export default function WhatsAppButton() {
-  const whatsappNumber = "yourphonenumber"; // Replace with actual number
+  const whatsappNumber = "21991633082"; // Updated phone number
   const message = "Olá! Gostaria de mais informações."; // Optional pre-filled message
 
   const handleClick = () => {
