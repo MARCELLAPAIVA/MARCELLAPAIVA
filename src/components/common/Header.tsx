@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, ShieldCheck } from 'lucide-react'; // Adicionado ShieldCheck
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,7 +13,8 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { categories } from '@/lib/categories'; // Import centralized categories
+import { Separator } from "@/components/ui/separator"; // Adicionado Separator
+import { categories } from '@/lib/categories'; 
 
 export default function Header() {
   return (
@@ -39,14 +40,14 @@ export default function Header() {
                   </SheetClose>
                 </div>
               </SheetHeader>
-              <ScrollArea className="flex-grow p-4">
-                <ul className="space-y-3">
+              <ScrollArea className="flex-grow">
+                <ul className="space-y-1 p-4"> {/* Ajustado padding e space-y */}
                   {categories.map((category) => (
                     <li key={category}>
                       <SheetClose asChild>
                         <button
                           // onClick={() => { /* Placeholder for category selection logic */ }}
-                          className="w-full text-left py-3 px-2 text-foreground hover:bg-muted/50 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full text-left py-3 px-3 text-foreground hover:bg-muted/50 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body"
                         >
                           {category}
                         </button>
@@ -55,6 +56,18 @@ export default function Header() {
                   ))}
                 </ul>
               </ScrollArea>
+              <Separator className="my-2 bg-border" />
+              <div className="p-4 border-t border-border">
+                <SheetClose asChild>
+                  <Link
+                    href="/login"
+                    className="flex items-center w-full text-left py-3 px-3 text-foreground hover:bg-muted/50 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body"
+                  >
+                    <ShieldCheck size={18} className="mr-2 text-primary" />
+                    Acesso Admin
+                  </Link>
+                </SheetClose>
+              </div>
             </SheetContent>
           </Sheet>
 
@@ -67,9 +80,7 @@ export default function Header() {
         </div>
 
         <nav className="flex items-center space-x-3 sm:space-x-4">
-          <Link href="/login" className="text-sm sm:text-base hover:text-gray-300 transition-colors">
-            Acesso Admin
-          </Link>
+          {/* O link "Acesso Admin" foi removido daqui */}
           <Button variant="ghost" size="icon" className="bg-white hover:bg-gray-200 text-black rounded-full h-8 w-8 sm:h-9 sm:w-9">
             <Search size={18} />
             <span className="sr-only">Buscar</span>
