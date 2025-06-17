@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // terá o papel 'client'.
 // Certifique-se de que os emails aqui correspondem aos usuários que você
 // adicionou manualmente no Firebase Authentication para serem administradores.
-const ADMIN_EMAILS = ['mvp@tabacaria.com', 'msp@tabacaria.com']; 
+const ADMIN_EMAILS = ['mvp@mttabacaria.com', 'msp@mttabacaria.com', 'jpv@mttabacaria.com', 'phv@mttabacaria.com']; 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);

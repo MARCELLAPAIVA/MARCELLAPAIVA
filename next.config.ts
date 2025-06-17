@@ -3,12 +3,12 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // typescript: {
+  //   ignoreBuildErrors: true, // Removido para builds de produção
+  // },
+  // eslint: {
+  //   ignoreDuringBuilds: true, // Removido para builds de produção
+  // },
   images: {
     remotePatterns: [
       {
@@ -27,11 +27,8 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     allowedDevOrigins: [
+      'http://9003-firebase-studio-1749839699180.cluster-vpxjqdstfzgs6qeiaf7rdlsqrc.cloudworkstations.dev',
       'https://9003-firebase-studio-1749839699180.cluster-vpxjqdstfzgs6qeiaf7rdlsqrc.cloudworkstations.dev',
-      // You might need to add other variations if the port or subdomain changes,
-      // or if you access it via other proxied URLs.
-      // For example, if you sometimes access it via http:
-      'http://9003-firebase-studio-1749839699180.cluster-vpxjqdstfzgs6qeiaf7rdlsqrc.cloudworkstations.dev'
     ],
   },
 };
