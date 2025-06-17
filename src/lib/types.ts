@@ -21,3 +21,18 @@ export interface User {
   createdAt?: number; // Timestamp for when user doc was created
 }
 
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface CartContextType {
+  cartItems: CartItem[];
+  addToCart: (product: Product) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
+  getTotalItems: () => number;
+  generateWhatsAppMessage: () => string;
+  isCartVisibleToUser: boolean;
+}

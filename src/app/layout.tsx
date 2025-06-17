@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer'; // Importar o Footer
 import { AuthProvider } from '@/contexts/AuthContext';
+import { CartProvider } from '@/contexts/CartContext'; // Importar CartProvider
 import WhatsAppButton from '@/components/common/WhatsAppButton';
 
 export const metadata: Metadata = {
@@ -26,13 +27,15 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen flex flex-col">
         <AuthProvider>
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8 pb-8">
-            {children}
-          </main>
-          <Footer /> {/* Adicionar o Footer aqui */}
-          <WhatsAppButton />
-          <Toaster />
+          <CartProvider> {/* Envolver com CartProvider */}
+            <Header />
+            <main className="flex-grow container mx-auto px-4 py-8 pb-8">
+              {children}
+            </main>
+            <Footer />
+            <WhatsAppButton />
+            <Toaster />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
