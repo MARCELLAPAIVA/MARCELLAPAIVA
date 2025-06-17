@@ -5,5 +5,6 @@ export interface Product {
   imageUrl: string; // URL from Firebase Storage
   imageName?: string; // Original image name, can be part of the storage path
   price: number; // Product price
+  category: string; // Product category
   createdAt: number; // Timestamp for sorting
 }

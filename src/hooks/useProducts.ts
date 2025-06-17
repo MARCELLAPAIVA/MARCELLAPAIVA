@@ -28,7 +28,7 @@ export function useProducts() {
         description: "Não foi possível buscar os produtos do servidor. Tente novamente mais tarde.",
         variant: "destructive",
       });
-      setProducts([]); // Clear products on error
+      setProducts([]); 
     } finally {
       setIsLoading(false);
     }
@@ -39,19 +39,18 @@ export function useProducts() {
   }, [fetchProducts]);
 
   const addProduct = useCallback(async (
-    productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl'>, 
+    productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl'>, // This type now includes 'category'
     imageFile: File
   ) => {
     setIsMutating(true);
     try {
-      const newProduct = await addProductToFirebase(productData, imageFile);
-      // Optimistic update or refetch:
-      // For simplicity, we refetch. For better UX, you could add to local state immediately.
+      // addProductToFirebase now handles productData which includes category
+      await addProductToFirebase(productData, imageFile);
       await fetchProducts(); 
       toast({
         title: "Sucesso!",
         description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
-        variant: "default",
+        variant: "default", 
       });
     } catch (error) {
       console.error("Failed to add product:", error);
@@ -69,16 +68,14 @@ export function useProducts() {
     setIsMutating(true);
     try {
       await deleteProductFromFirebase(id, imageUrl);
-      // Optimistic update or refetch:
       setProducts((prevProducts) => prevProducts.filter((p) => p.id !== id));
       toast({
         title: "Produto Removido",
         description: `O produto "${productName || 'selecionado'}" foi removido com sucesso.`,
-        variant: "destructive", // Or "default" if preferred
+        variant: "default", // Changed from destructive to default for consistency, or keep as destructive if preferred
       });
     } catch (error) {
       console.error("Failed to remove product:", error);
-      // If optimistic update failed, refetch to sync state
       await fetchProducts();
       toast({
         title: "Erro ao Remover Produto",
@@ -90,8 +87,6 @@ export function useProducts() {
     }
   }, [toast, fetchProducts]);
   
-  // isHydrated is less relevant now as data comes from Firebase, isLoading is more important
-  // Kept for compatibility if any component relies on it, but should ideally be isLoading
   const isHydrated = !isLoading; 
 
   return { products, addProduct, removeProduct, isLoading, isMutating, isHydrated, refetchProducts: fetchProducts };

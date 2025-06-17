@@ -13,25 +13,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-const categories = [
-  "BBQ",
-  "BORRACHAS DE VEDAÇÃO",
-  "CARVÃO",
-  "ESSENCIA",
-  "FOGAREIRO",
-  "HEAD SHOP",
-  "JOGOS E DIVERSOS",
-  "KIT NARGUILE",
-  "MANGUEIRAS",
-  "PAPEL ALUMINIO",
-  "PRATOS",
-  "PRODUTOS",
-  "PRODUTOS COM TEPERNO",
-  "ROSH",
-  "STEM",
-  "VASOS",
-];
+import { categories } from '@/lib/categories'; // Import centralized categories
 
 export default function Header() {
   return (

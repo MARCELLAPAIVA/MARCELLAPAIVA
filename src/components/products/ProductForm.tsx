@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProducts } from '@/hooks/useProducts';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { UploadCloud, XCircle, DollarSign } from 'lucide-react';
+import { categories } from '@/lib/categories'; // Import centralized categories
 
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -21,6 +23,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 const productFormSchema = z.object({
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }).max(500, { message: "A descrição não pode exceder 500 caracteres." }),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }).min(0.01, {message: "O preço deve ser maior que zero."}),
+  category: z.string().min(1, { message: "Selecione uma categoria." }),
   imageFile: z.instanceof(File)
     .refine((file) => file.size <= MAX_FILE_SIZE_BYTES, `O tamanho máximo da imagem é ${MAX_FILE_SIZE_MB}MB.`)
     .refine(
@@ -40,6 +43,7 @@ export default function ProductForm() {
     defaultValues: {
       description: "",
       price: undefined,
+      category: "",
       imageFile: null,
     },
   });
@@ -51,7 +55,7 @@ export default function ProductForm() {
     }
     
     await addProduct(
-      { description: data.description, price: data.price },
+      { description: data.description, price: data.price, category: data.category }, // Add category here
       data.imageFile
     );
     
@@ -115,8 +119,7 @@ export default function ProductForm() {
                     step="0.01"
                     placeholder="Ex: 29.90"
                     className="pl-10 bg-input border-border focus:border-primary focus:ring-primary"
-                    {...field} // Spreads name, onBlur, ref
-                    value={(field.value === undefined || field.value === null || isNaN(Number(field.value))) ? '' : String(field.value)}
+                    value={field.value === undefined || field.value === null || isNaN(Number(field.value)) ? '' : String(field.value)}
                     onChange={event => {
                       const value = event.target.value;
                       if (value === '') {
@@ -126,6 +129,9 @@ export default function ProductForm() {
                         field.onChange(isNaN(num) ? undefined : num);
                       }
                     }}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    name={field.name}
                   />
                 </div>
               </FormControl>
@@ -136,8 +142,33 @@ export default function ProductForm() {
 
         <FormField
           control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-foreground font-headline text-lg">Categoria</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger className="bg-input border-border focus:border-primary focus:ring-primary">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="imageFile"
-          render={({ field: { onChange, value, ...restField } }) => (
+          render={({ field: { onChange, value, ...restField } }) => ( // Ensure value is not passed directly to native input if it's not a string
             <FormItem>
               <FormLabel className="text-foreground font-headline text-lg">Imagem do Produto</FormLabel>
               <FormControl>
@@ -151,7 +182,7 @@ export default function ProductForm() {
                       const file = e.target.files?.[0];
                       onChange(file || null);
                     }}
-                    {...restField}
+                    {...restField} // Passes ref, name, onBlur
                   />
                   <Label 
                     htmlFor="file-upload"
