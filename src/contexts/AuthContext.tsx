@@ -37,13 +37,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!firebaseAuthService) {
-      console.error("Firebase Auth service (firebaseAuthService) is not properly initialized. Check Firebase configuration in src/lib/firebase.ts and ensure Authentication is enabled in the Firebase console. Auth features will not work.");
+      console.error("AuthContext: Firebase Auth service (firebaseAuthService) is not properly initialized. Check Firebase configuration in src/lib/firebase.ts and ensure Authentication is enabled in the Firebase console. Auth features will not work.");
       setIsLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(firebaseAuthService, (firebaseUser: FirebaseUser | null) => {
-      setIsLoading(true);
+      setIsLoading(true); // Set loading true while processing auth state
       if (firebaseUser) {
         const role = ADMIN_EMAILS.includes(firebaseUser.email || '') ? 'admin' : 'client';
         setUser({
@@ -59,11 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
-      console.error("Firebase Auth service not initialized. Cannot register user.");
+      console.error("AuthContext: Firebase Auth service not initialized. Cannot register user.");
       toast({ title: "Erro de Configuração", description: "Não foi possível conectar ao serviço de autenticação.", variant: "destructive" });
       return false;
     }
@@ -72,22 +72,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
       await updateProfile(userCredential.user, { displayName: usernameInput });
       
-      const role = ADMIN_EMAILS.includes(userCredential.user.email || '') ? 'admin' : 'client';
-      setUser({ 
-        uid: userCredential.user.uid, 
-        email: userCredential.user.email, 
-        displayName: usernameInput,
-        role: role 
-      });
-
+      // setUser will be updated by onAuthStateChanged, but we can show toast immediately
       toast({
-        title: "Registro Bem-Sucedido",
+        title: "Registro Bem-Sucedido!",
         description: "Sua conta foi criada. Você já está logado.",
-        variant: "default",
+        variant: "default", // Changed from "success" to "default" as per ShadCN
       });
+      // No need to manually set user here, onAuthStateChanged will handle it.
       return true;
     } catch (error: any) {
-      console.error("Firebase registration error:", error);
+      console.error("AuthContext: Firebase registration error:", error);
       let description = "Ocorreu um erro desconhecido durante o registro.";
       if (error.code === 'auth/email-already-in-use') {
         description = "Este email já está em uso por outra conta.";
@@ -101,43 +95,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast]); // router is not needed here
 
   const login = useCallback(async (emailInput: string, passwordInput: string): Promise<boolean> => {
     if (!firebaseAuthService) {
-      console.error("Firebase Auth service not initialized. Cannot login user.");
+      console.error("AuthContext: Firebase Auth service not initialized. Cannot login user.");
       toast({ title: "Erro de Configuração", description: "Não foi possível conectar ao serviço de autenticação.", variant: "destructive" });
       return false;
     }
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
+      // setUser will be updated by onAuthStateChanged
+      // Toast for login success can be shown here or after redirection based on role (handled in login page)
       return true;
     } catch (error: any) {
-      console.error("Firebase login error:", error);
+      console.error("AuthContext: Firebase login error:", error);
       let description = "Email ou senha inválidos. Verifique suas credenciais.";
        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         description = "Email ou senha incorretos. Tente novamente.";
       } else if (error.code === 'auth/invalid-email') {
         description = "O formato do email fornecido não é válido.";
       }
+      // Consider more specific error codes if needed: e.g. auth/too-many-requests
       toast({ title: "Falha no Login", description, variant: "destructive" });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast]); // router is not needed here
 
   const logout = useCallback(async () => {
     if (!firebaseAuthService) {
-      console.error("Firebase Auth service not initialized. Cannot logout user.");
+      console.error("AuthContext: Firebase Auth service not initialized. Cannot logout user.");
+      // Optionally, show a toast here if desired, though usually logout errors are less critical for user UX
     }
     setIsLoading(true);
     try {
       await signOut(firebaseAuthService);
-      router.push('/login'); 
+      // setUser will be set to null by onAuthStateChanged
+      router.push('/login'); // Redirect after logout
     } catch (error) {
-      console.error("Firebase logout error:", error);
+      console.error("AuthContext: Firebase logout error:", error);
       toast({
         title: "Erro ao Sair",
         description: "Não foi possível fazer logout. Tente novamente.",
@@ -158,7 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider. Ensure your component is wrapped by AuthProvider.');
   }
   return context;
 };

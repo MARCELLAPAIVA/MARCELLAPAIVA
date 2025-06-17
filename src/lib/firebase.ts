@@ -16,20 +16,51 @@ const firebaseConfig = {
   measurementId: "G-55KD657X9H"
 };
 
-// Initialize Firebase
-let app: FirebaseApp;
-let db: Firestore;
-let storage: FirebaseStorage;
-let auth: Auth;
+let app: FirebaseApp | undefined = undefined;
+let db: Firestore | undefined = undefined;
+let storage: FirebaseStorage | undefined = undefined;
+let auth: Auth | undefined = undefined;
 
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
+try {
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+    console.log("Firebase: Main app initialized successfully.");
+  } else {
+    app = getApp();
+    console.log("Firebase: Existing main app retrieved.");
+  }
+} catch (error) {
+  console.error("Firebase: CRITICAL - Failed to initialize Firebase app. Ensure firebaseConfig is correct and an app with this name hasn't been initialized elsewhere with different config. Error:", error);
+  // app remains undefined
 }
 
-db = getFirestore(app);
-storage = getStorage(app);
-auth = getAuth(app);
+if (app) {
+  try {
+    db = getFirestore(app);
+    console.log("Firebase: Firestore service initialized successfully.");
+  } catch (error) {
+    console.error("Firebase: Failed to initialize Firestore. Is it enabled in your Firebase project console? Error:", error);
+    // db remains undefined
+  }
+
+  try {
+    storage = getStorage(app);
+    console.log("Firebase: Storage service initialized successfully.");
+  } catch (error) {
+    console.error("Firebase: Failed to initialize Firebase Storage. Is it enabled in your Firebase project console? Error:", error);
+    // storage remains undefined
+  }
+
+  try {
+    auth = getAuth(app);
+    console.log("Firebase: Auth service initialized successfully.");
+  } catch (error) {
+    console.error("Firebase: Failed to initialize Firebase Auth. Is it enabled (Email/Password provider) in your Firebase project console? Error:", error);
+    // auth remains undefined
+  }
+} else {
+  // This message is critical if 'app' itself failed to initialize.
+  console.error("Firebase: Main Firebase app was NOT initialized. Consequently, services (Firestore, Storage, Auth) will NOT be available. Check previous critical errors.");
+}
 
 export { app, db, storage, auth };
