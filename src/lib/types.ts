@@ -12,7 +12,7 @@ export interface Product {
   createdAt: number; // Timestamp for sorting
 }
 
-export interface User {
+export interface User { // This type is used by AuthContext, represents the logged-in user state
   uid: string; // Firebase Auth User ID
   email: string | null;
   displayName: string | null;
@@ -35,4 +35,25 @@ export interface CartContextType {
   getTotalItems: () => number;
   generateWhatsAppMessage: () => string;
   isCartVisibleToUser: boolean;
+}
+
+// Interface para os dados como são armazenados no Firestore (usada em userService)
+export interface UserDocument {
+  email: string | null;
+  displayName: string | null;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: import('firebase/firestore').Timestamp | import('firebase/firestore').FieldValue;
+  updatedAt: import('firebase/firestore').Timestamp | import('firebase/firestore').FieldValue;
+}
+
+// Interface para os dados como são retornados e usados na UI (com Timestamps convertidos)
+export interface UserData {
+  uid: string; // Crucial for identifying user in lists/updates
+  email: string | null;
+  displayName: string | null;
+  role: UserRole;
+  status: UserStatus;
+  createdAt?: number;
+  updatedAt?: number;
 }
