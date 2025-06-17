@@ -46,11 +46,11 @@ export function useProducts() {
     setIsMutating(true);
     try {
       await addProductToFirebase(productData, imageFile);
-      await fetchProducts();
+      await fetchProducts(); // Refetch products to update the list
       toast({
         title: "Sucesso!",
         description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
-        variant: "default",
+        variant: "default", 
       });
     } catch (error) {
       console.error("Failed to add product:", error);
@@ -87,16 +87,16 @@ export function useProducts() {
     }
   }, [toast, fetchProducts]);
 
-  const isHydrated = !isLoading;
+  const isHydrated = !isLoading; 
 
   return {
     products,
     addProduct,
     removeProduct,
-    isLoading,
-    isMutating,
-    isHydrated,
-    refetchProducts: fetchProducts,
+    isLoading, 
+    isMutating, 
+    isHydrated, 
+    refetchProducts: fetchProducts, 
     selectedCategory,
     setSelectedCategory
   };
