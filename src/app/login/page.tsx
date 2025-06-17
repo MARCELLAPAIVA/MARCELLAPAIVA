@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, UserPlus } from 'lucide-react'; // Added UserPlus
+import { LogIn, UserPlus } from 'lucide-react';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -33,16 +33,14 @@ export default function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
-    const success = await login(username, password);
-    // Redirection is handled by useEffect
+    const success = await login(email, password);
     if (!success) {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only set to false if login failed
     }
     // If successful, useEffect will handle redirection.
-    // If login fails, we need to set isSubmitting to false here.
   };
 
-  if (authLoading) {
+  if (authLoading && !user) { // Show loading only if not yet redirected
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
@@ -50,9 +48,7 @@ export default function LoginPage() {
     );
   }
   
-  // If user is already logged in, useEffect will redirect them.
-  // We can show a temporary message or null.
-  if (user) {
+  if (user) { // If user is already available, useEffect will redirect
      return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Redirecionando...</p>
@@ -72,15 +68,15 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-foreground font-headline">Usuário</Label>
+              <Label htmlFor="email" className="text-foreground font-headline">Email</Label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="bg-input border-border focus:border-primary focus:ring-primary"
-                placeholder="Seu usuário"
+                placeholder="seu@email.com"
               />
             </div>
             <div className="space-y-2">

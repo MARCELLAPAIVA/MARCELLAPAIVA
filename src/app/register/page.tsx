@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserPlus, LogIn } from 'lucide-react';
 
 export default function RegisterPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // For displayName
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { register, user, isLoading: authLoading } = useAuth();
@@ -22,7 +23,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      // If user is already logged in, redirect based on role
+      // If user is already logged in (e.g. after successful registration), redirect based on role
       if (user.role === 'admin') {
         router.push('/manage');
       } else {
@@ -39,17 +40,14 @@ export default function RegisterPage() {
     }
     setError('');
     setIsSubmitting(true);
-    const success = await register(username, password);
-    if (success) {
-      router.push('/login'); // Redirect to login page after successful registration
-    } else {
-      // Error message is handled by toast in AuthContext, but we can set local error too if needed
-      // setError("Falha no registro. O nome de usuário pode já existir.");
+    const success = await register(email, password, username);
+    // Redirection is handled by useEffect if registration is successful and user state updates
+    if (!success) {
+      setIsSubmitting(false); // Only set to false if registration failed, otherwise useEffect handles it
     }
-    setIsSubmitting(false);
   };
 
-  if (authLoading) {
+  if (authLoading && !user) { // Show loading only if not yet redirected
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
@@ -57,6 +55,8 @@ export default function RegisterPage() {
     );
   }
 
+  // If user becomes available (logged in), useEffect will redirect.
+  // This helps prevent flicker if user is already logged in from a previous session.
   if (user) {
      return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -77,7 +77,19 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-foreground font-headline">Usuário</Label>
+              <Label htmlFor="email" className="text-foreground font-headline">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-input border-border focus:border-primary focus:ring-primary"
+                placeholder="seu@email.com"
+              />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="username" className="text-foreground font-headline">Nome de Usuário</Label>
               <Input
                 id="username"
                 type="text"
@@ -85,7 +97,7 @@ export default function RegisterPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 className="bg-input border-border focus:border-primary focus:ring-primary"
-                placeholder="Escolha um nome de usuário"
+                placeholder="Como você gostaria de ser chamado(a)"
               />
             </div>
             <div className="space-y-2">

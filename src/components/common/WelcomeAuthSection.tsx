@@ -26,12 +26,13 @@ export default function WelcomeAuthSection() {
   }
 
   if (user) {
+    const displayName = user.displayName || user.email;
     return (
       <section className="py-6 sm:py-8 text-center">
         <div className="flex flex-col items-center space-y-4">
           <UserCircle2 size={48} className="text-primary" />
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Bem-vindo(a), {user.username}!</h2>
+            <h2 className="text-xl font-semibold text-foreground">Bem-vindo(a), {displayName}!</h2>
             {user.role === 'admin' && (
               <p className="text-muted-foreground">Você está logado como administrador.</p>
             )}

@@ -10,6 +10,8 @@ export interface Product {
 }
 
 export interface User {
-  username: string;
+  uid: string; // Firebase Auth User ID
+  email: string | null;
+  displayName: string | null;
   role: 'admin' | 'client';
 }

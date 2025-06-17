@@ -5,154 +5,135 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-import type { User } from '@/lib/types';
+import type { User as AppUser } from '@/lib/types'; // Renamed to avoid conflict
+import { auth } from '@/lib/firebase';
+import { 
+  onAuthStateChanged, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut,
+  updateProfile,
+  type User as FirebaseUser 
+} from 'firebase/auth';
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   isLoading: boolean;
-  login: (usernameInput: string, passwordInput: string) => Promise<boolean>;
-  register: (usernameInput: string, passwordInput: string) => Promise<boolean>;
+  login: (emailInput: string, passwordInput: string) => Promise<boolean>;
+  register: (emailInput: string, passwordInput: string, usernameInput: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded admin users
-const ALLOWED_ADMIN_USERS = [
-  { username: 'MVP', password: '101416Saka' },
-  { username: 'MSP', password: 'Royal2025' },
-];
-
-const AUTH_STORAGE_KEY = 'mtTabacariaAuthUser'; // Stores the currently logged-in user (admin or client)
-const CLIENT_USERS_STORAGE_KEY = 'mtTabacariaClientUsers'; // Stores registered client accounts
+// Define admin emails here. Users registering with these emails will get 'admin' role.
+const ADMIN_EMAILS = ['mvp@tabacaria.com', 'msp@tabacaria.com']; // IMPORTANT: Update with actual admin emails
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      setIsLoading(true);
+      if (firebaseUser) {
+        const role = ADMIN_EMAILS.includes(firebaseUser.email || '') ? 'admin' : 'client';
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          role: role,
+        });
+      } else {
+        setUser(null);
       }
-    } catch (error) {
-      console.error("Failed to load user from localStorage:", error);
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const getClientUsers = (): User[] => {
-    try {
-      const storedClientUsers = localStorage.getItem(CLIENT_USERS_STORAGE_KEY);
-      return storedClientUsers ? JSON.parse(storedClientUsers) : [];
-    } catch (error) {
-      console.error("Failed to load client users from localStorage:", error);
-      return [];
-    }
-  };
-
-  const saveClientUsers = (clientUsers: User[]) => {
-    try {
-      localStorage.setItem(CLIENT_USERS_STORAGE_KEY, JSON.stringify(clientUsers));
-    } catch (error) {
-      console.error("Failed to save client users to localStorage:", error);
-    }
-  };
-
-  const register = useCallback(async (usernameInput: string, passwordInput: string): Promise<boolean> => {
+  const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
     setIsLoading(true);
-    const clientUsers = getClientUsers();
-    const isAdmin = ALLOWED_ADMIN_USERS.some(admin => admin.username === usernameInput);
-    const clientExists = clientUsers.some(client => client.username === usernameInput);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, emailInput, passwordInput);
+      await updateProfile(userCredential.user, { displayName: usernameInput });
+      
+      // Update local user state immediately for better UX, onAuthStateChanged will also fire
+      const role = ADMIN_EMAILS.includes(userCredential.user.email || '') ? 'admin' : 'client';
+      setUser({ 
+        uid: userCredential.user.uid, 
+        email: userCredential.user.email, 
+        displayName: usernameInput, // or userCredential.user.displayName after updateProfile
+        role: role 
+      });
 
-    if (isAdmin || clientExists) {
+      toast({
+        title: "Registro Bem-Sucedido",
+        description: "Sua conta foi criada. Você já está logado.",
+        variant: "default",
+      });
+      setIsLoading(false);
+      return true;
+    } catch (error: any) {
+      console.error("Firebase registration error:", error);
+      let description = "Ocorreu um erro desconhecido.";
+      if (error.code === 'auth/email-already-in-use') {
+        description = "Este email já está em uso.";
+      } else if (error.code === 'auth/weak-password') {
+        description = "A senha é muito fraca. Use pelo menos 6 caracteres.";
+      } else if (error.code === 'auth/invalid-email') {
+        description = "O email fornecido não é válido.";
+      }
       toast({
         title: "Falha no Registro",
-        description: "Nome de usuário já existe.",
+        description: description,
         variant: "destructive",
       });
       setIsLoading(false);
       return false;
     }
-
-    // In a real app, hash the password before saving
-    const newClient: User = { username: usernameInput, role: 'client' };
-    const updatedClientUsers = [...clientUsers, { ...newClient, password: passwordInput }]; // Storing password directly for prototype
-
-    // Simulate saving to DB
-    localStorage.setItem(CLIENT_USERS_STORAGE_KEY, JSON.stringify(updatedClientUsers.map(u => ({username: u.username, password: (u as any).password, role: u.role }))));
-
-
-    toast({
-      title: "Registro Bem-Sucedido",
-      description: "Sua conta foi criada. Faça o login.",
-      variant: "default",
-    });
-    setIsLoading(false);
-    return true;
   }, [toast]);
 
-
-  const login = useCallback(async (usernameInput: string, passwordInput: string): Promise<boolean> => {
+  const login = useCallback(async (emailInput: string, passwordInput: string): Promise<boolean> => {
     setIsLoading(true);
-
-    // Check for admin user
-    const foundAdmin = ALLOWED_ADMIN_USERS.find(
-      (u) => u.username === usernameInput && u.password === passwordInput
-    );
-
-    if (foundAdmin) {
-      const adminData: User = { username: foundAdmin.username, role: 'admin' };
-      setUser(adminData);
-      try {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(adminData));
-      } catch (error) {
-        console.error("Failed to save admin user to localStorage:", error);
-      }
+    try {
+      await signInWithEmailAndPassword(auth, emailInput, passwordInput);
+      // onAuthStateChanged will handle setting the user state
+      // No need to show success toast here, redirection will indicate success
       setIsLoading(false);
       return true;
-    }
-
-    // Check for client user
-    const clientUsersWithPasswords = getClientUsers(); // This should retrieve users with their passwords stored for prototype
-    const foundClient = clientUsersWithPasswords.find(
-      (u: any) => u.username === usernameInput && u.password === passwordInput
-    );
-
-
-    if (foundClient) {
-      const clientData: User = { username: foundClient.username, role: 'client' };
-      setUser(clientData);
-      try {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(clientData));
-      } catch (error) {
-        console.error("Failed to save client user to localStorage:", error);
-      }
+    } catch (error: any) {
+      console.error("Firebase login error:", error);
+      toast({
+        title: "Falha no Login",
+        description: "Email ou senha inválidos.",
+        variant: "destructive",
+      });
       setIsLoading(false);
-      return true;
+      return false;
     }
-    
-    toast({
-      title: "Falha no Login",
-      description: "Usuário ou senha inválidos.",
-      variant: "destructive",
-    });
-    setIsLoading(false);
-    return false;
   }, [toast]);
 
-  const logout = useCallback(() => {
-    setUser(null);
+  const logout = useCallback(async () => {
+    setIsLoading(true);
     try {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
+      await signOut(auth);
+      // onAuthStateChanged will set user to null
+      router.push('/login'); 
     } catch (error) {
-      console.error("Failed to remove user from localStorage:", error);
+      console.error("Firebase logout error:", error);
+      toast({
+        title: "Erro ao Sair",
+        description: "Não foi possível fazer logout. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    router.push('/login');
-  }, [router]);
+  }, [router, toast]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>

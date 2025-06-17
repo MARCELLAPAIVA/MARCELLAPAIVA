@@ -25,7 +25,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ManageProductsPage() {
-  const { user, isLoading: authIsLoading } = useAuth();
+  const { user, isLoading: authIsLoading } = useAuth(); // user now comes from Firebase Auth via context
   const router = useRouter();
   const { products, removeProduct, isLoading: productsLoading, isMutating } = useProducts();
   const { toast } = useToast();
@@ -47,6 +47,7 @@ export default function ManageProductsPage() {
     removeProduct(id, imageUrl, productName); 
   };
 
+  // Improved loading state: covers auth loading, redirection, and initial product loading for admins
   if (authIsLoading || (!user && !authIsLoading) || (user && user.role !== 'admin' && !authIsLoading) ) {
     return (
       <div className="space-y-12">
@@ -78,8 +79,9 @@ export default function ManageProductsPage() {
       </div>
     );
   }
-
-  // This check is theoretically covered by useEffect, but good for explicit rendering control
+  
+  // This check is for users who might have somehow bypassed the useEffect redirect
+  // or if the state updates in a way that useEffect hasn't caught yet.
   if (!user || user.role !== 'admin') {
      return (
         <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -87,7 +89,6 @@ export default function ManageProductsPage() {
         </div>
     );
   }
-
 
   return (
     <div className="space-y-12">
