@@ -13,9 +13,11 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  type User as FirebaseUser
+  type User as FirebaseUser,
+  setPersistence, // Added
+  browserSessionPersistence // Added
 } from 'firebase/auth';
-import { getUserData, setUserData } from '@/lib/userService'; // Import user service
+import { getUserData, setUserData } from '@/lib/userService';
 import { serverTimestamp } from 'firebase/firestore';
 
 interface AuthContextType {
@@ -44,59 +46,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(firebaseAuthService, async (firebaseUser: FirebaseUser | null) => {
-      setIsLoading(true);
-      if (firebaseUser) {
-        const userDataFromFirestore = await getUserData(firebaseUser.uid);
+    let unsubscribeAuthStateChanged: (() => void) | null = null;
 
-        if (userDataFromFirestore) {
-          const appUser: AppUser = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            role: userDataFromFirestore.role,
-            status: userDataFromFirestore.status, // Status from Firestore is respected
-            createdAt: userDataFromFirestore.createdAt,
-          };
-          setUser(appUser);
-          
-          // Toast for existing user status if it's not 'approved' (e.g., admin manually changed it)
-          if (appUser.status === 'pending') {
-             toast({ title: "Conta Pendente", description: "Sua conta ainda está aguardando aprovação do administrador.", variant: "default", duration: 7000 });
-          } else if (appUser.status === 'rejected') {
-             toast({ title: "Conta Rejeitada", description: "Sua conta foi rejeitada. Entre em contato com o suporte.", variant: "destructive", duration: 7000 });
-          }
-
-        } else {
-          // New user (or document missing), create with 'approved' status
-          const isUserAdminByEmail = ADMIN_EMAILS.includes(firebaseUser.email || '');
-          const newRole: UserRole = isUserAdminByEmail ? 'admin' : 'client';
-          const newStatus: UserStatus = 'approved'; // All new users are approved
-
-          await setUserData(firebaseUser.uid, {
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName, 
-            role: newRole,
-            status: newStatus,
-            createdAt: serverTimestamp(),
-          });
-          const newUserDoc: AppUser = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            role: newRole,
-            status: newStatus,
-          };
-          setUser(newUserDoc);
-           toast({ title: "Bem-vindo(a)!", description: "Sua conta está ativa.", variant: "default" });
-        }
-      } else {
-        setUser(null);
+    const initializeAuthFlow = async () => {
+      try {
+        await setPersistence(firebaseAuthService, browserSessionPersistence);
+        console.log("AuthContext: Firebase Auth persistence set to 'session'.");
+      } catch (error) {
+        console.error("AuthContext: Error setting auth persistence to session:", error);
+        // If setting persistence fails, app will proceed with default (local) persistence.
       }
-      setIsLoading(false);
-    });
 
-    return () => unsubscribe();
+      unsubscribeAuthStateChanged = onAuthStateChanged(firebaseAuthService, async (firebaseUser: FirebaseUser | null) => {
+        setIsLoading(true); 
+        if (firebaseUser) {
+          const userDataFromFirestore = await getUserData(firebaseUser.uid);
+
+          if (userDataFromFirestore) {
+            const appUser: AppUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: userDataFromFirestore.role,
+              status: userDataFromFirestore.status, 
+              createdAt: userDataFromFirestore.createdAt,
+            };
+            setUser(appUser);
+            
+            if (appUser.status === 'pending') {
+               toast({ title: "Conta Pendente", description: "Sua conta ainda está aguardando aprovação do administrador.", variant: "default", duration: 7000 });
+            } else if (appUser.status === 'rejected') {
+               toast({ title: "Conta Rejeitada", description: "Sua conta foi rejeitada. Entre em contato com o suporte.", variant: "destructive", duration: 7000 });
+            }
+
+          } else {
+            const isUserAdminByEmail = ADMIN_EMAILS.includes(firebaseUser.email || '');
+            const newRole: UserRole = isUserAdminByEmail ? 'admin' : 'client';
+            const newStatus: UserStatus = 'approved'; 
+
+            await setUserData(firebaseUser.uid, {
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName, 
+              role: newRole,
+              status: newStatus,
+              createdAt: serverTimestamp(),
+            });
+            const newUserDoc: AppUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: newRole,
+              status: newStatus,
+            };
+            setUser(newUserDoc);
+             toast({ title: "Bem-vindo(a)!", description: "Sua conta está ativa.", variant: "default" });
+          }
+        } else {
+          setUser(null); 
+        }
+        setIsLoading(false); 
+      });
+    };
+
+    initializeAuthFlow();
+
+    return () => {
+      if (unsubscribeAuthStateChanged) {
+        unsubscribeAuthStateChanged();
+      }
+    };
   }, [toast]); 
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
@@ -114,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const isUserAdmin = ADMIN_EMAILS.includes(emailInput);
       const initialRole: UserRole = isUserAdmin ? 'admin' : 'client';
-      const initialStatus: UserStatus = 'approved'; // All new users are 'approved'
+      const initialStatus: UserStatus = 'approved'; 
 
       await setUserData(userCredential.user.uid, {
         email: userCredential.user.email,
@@ -159,7 +177,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
-      // onAuthStateChanged will handle setting the user and showing status-related toasts if necessary
       return true;
     } catch (error: any) {
       console.error("AuthContext: Firebase login error:", error);
@@ -191,8 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await signOut(firebaseAuthService);
-      setUser(null); 
-      router.push('/login');
+      router.push('/login'); 
     } catch (error) {
       console.error("AuthContext: Firebase logout error:", error);
       toast({
@@ -201,7 +217,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); 
     }
   }, [router, toast]);
 
@@ -220,3 +236,4 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
+    
