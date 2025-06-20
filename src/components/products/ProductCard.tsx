@@ -16,7 +16,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Changed from console.error to console.warn to avoid Next.js error overlay for debug messages
+  // Changed from console.error to console.warn to avoid Next.js error overlay
   console.warn(`ProductCard: Function body executing. Product ID: ${product?.id}, Desc: ${product?.description?.substring(0,20)}, ImageURL: ${product?.imageUrl}`);
 
   const [imageError, setImageError] = useState(false);

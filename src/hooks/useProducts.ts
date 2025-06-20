@@ -122,8 +122,8 @@ export function useProducts() {
   }, [toast]);
 
   const products = useMemo(() => {
-    // Changed from console.error to console.warn
-    console.warn("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
+    // Changed from console.error to console.log to avoid Next.js error overlay
+    console.log("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
     let tempProducts = [...rawProducts];
 
     if (selectedCategory) {
