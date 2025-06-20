@@ -18,9 +18,13 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
+  // Log da URL da imagem para depuração
+  // console.log(`ProductCard: Rendering product '${product.description?.substring(0,30)}...', Image URL: '${product.imageUrl}'`);
+
   const safeDescription = product.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const altText = product.imageName || safeDescription.substring(0,50) || "Imagem do produto";
+  // Usar product.description como fallback principal para altText se imageName não existir.
+  const altText = product.imageName || product.description?.substring(0,50) || "Imagem do produto";
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -37,11 +41,16 @@ export default function ProductCard({ product }: ProductCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover"
             data-ai-hint="product tobacco"
+            onError={(e) => {
+              console.error(`ProductCard: Error loading image for product ${product.id} (${product.description?.substring(0,30)}...). URL: ${product.imageUrl}`, e.currentTarget.currentSrc);
+              // Opcional: Mudar para placeholder em caso de erro
+              // e.currentTarget.src = "https://placehold.co/400x400.png?text=Error";
+            }}
           />
         ) : (
            <Image
-            src={"https://placehold.co/400x400.png"}
-            alt={altText}
+            src={"https://placehold.co/400x400.png"} // Placeholder padrão
+            alt={altText} // Usar o mesmo altText
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover"
@@ -54,7 +63,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <p className="font-body text-sm text-foreground line-clamp-2 mb-1">
             {productName}
           </p>
-          {user && user.status === 'approved' ? ( // Show price only if user is logged in AND approved
+          {user && user.status === 'approved' ? (
             typeof product.price === 'number' ? (
               <p className="font-headline text-lg text-primary font-semibold">
                 {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}

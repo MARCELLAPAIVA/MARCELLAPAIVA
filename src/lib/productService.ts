@@ -10,7 +10,8 @@ const PRODUCTS_COLLECTION = 'products';
 const getImageNameForStorage = (originalFileName: string, productId: string) => {
   const extension = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
   // Cria um nome de arquivo mais simples e seguro, usando o ID do produto e um timestamp
-  return `product_image_${productId}_${Date.now()}.${extension}`;
+  const safeOriginalFileName = originalFileName.replace(/[^a-zA-Z0-9_.]/g, '_').substring(0, 50); // Limpa e trunca o nome original
+  return `product_${productId}_${safeOriginalFileName}_${Date.now()}.${extension}`;
 };
 
 export const addProductToFirebase = async (
@@ -21,28 +22,31 @@ export const addProductToFirebase = async (
       console.error("Firebase ProductService: Firestore 'db' or Storage 'storage' is not properly initialized. Cannot add product. Check Firebase configuration and ensure services are enabled.");
       return null;
   }
+  console.log("Firebase ProductService: addProductToFirebase called with productData:", productData, "and imageFile:", imageFile.name);
 
   try {
     const productDocRef = doc(collection(db, PRODUCTS_COLLECTION));
     const productId = productDocRef.id;
 
-    // Usa a função getImageNameForStorage para criar o nome do arquivo que será salvo no Storage
     const storageFileName = getImageNameForStorage(imageFile.name, productId);
     const storageRefPath = `${PRODUCTS_COLLECTION}/${productId}/${storageFileName}`;
     const fileStorageRef = ref(storage, storageRefPath);
     
+    console.log("Firebase ProductService: Uploading to storage path:", storageRefPath);
     await uploadBytes(fileStorageRef, imageFile);
     const imageUrl = await getDownloadURL(fileStorageRef);
+    console.log("Firebase ProductService: Image uploaded. Download URL:", imageUrl);
 
     const newProductDataWithImage = {
       ...productData,
       imageUrl: imageUrl,
       imageName: imageFile.name, // Salva o nome original do arquivo para referência
-      // Opcional: você poderia salvar storageFileName aqui também se quisesse ter referência a ele no Firestore
+      storagePath: storageRefPath, // Opcional: Salvar o caminho do storage para referência/deleção
       createdAt: serverTimestamp(),
     };
 
     await setDoc(productDocRef, newProductDataWithImage);
+    console.log("Firebase ProductService: Product data saved to Firestore with ID:", productId);
 
     return {
         id: productId,
@@ -56,7 +60,7 @@ export const addProductToFirebase = async (
 
   } catch (error) {
     console.error("Firebase ProductService: Error adding product to Firebase: ", error);
-    throw error;
+    throw error; // Re-throw para que o ProductForm possa tratar
   }
 };
 
@@ -93,18 +97,26 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl: str
       console.error("Firebase ProductService: Firestore 'db' or Storage 'storage' is not properly initialized. Cannot delete product. Check Firebase configuration.");
       return false;
   }
+  console.log("Firebase ProductService: Attempting to delete product:", productId, "with imageUrl:", imageUrl);
 
   try {
+    // Primeiro deletar do Firestore
     await deleteDoc(doc(db, PRODUCTS_COLLECTION, productId));
+    console.log("Firebase ProductService: Product deleted from Firestore:", productId);
 
+    // Depois deletar do Storage
     if (imageUrl) {
       try {
-        const imageRef = ref(storage, imageUrl);
+        const imageRef = ref(storage, imageUrl); // Tenta usar a URL de download diretamente
         await deleteObject(imageRef);
+        console.log("Firebase ProductService: Image deleted from Storage using direct URL:", imageUrl);
       } catch (storageError: any) {
-        console.warn(`Firebase ProductService: Failed to delete image from Storage at ${imageUrl}. It might have already been deleted or path is incorrect. Error: ${storageError.message}`);
+        // Se falhar (ex: imageUrl não é um caminho de storage ou permissões diferentes),
+        // pode ser necessário buscar o storagePath do Firestore se você o salvou.
+        // Por agora, logamos o aviso.
+        console.warn(`Firebase ProductService: Failed to delete image from Storage at ${imageUrl}. It might have already been deleted, path is incorrect, or it's not a storage reference. Error: ${storageError.message}`);
         if (storageError.code !== 'storage/object-not-found') {
-           // Handle other storage errors if necessary
+           // Lidar com outros erros de storage se necessário, ex: tentar deletar usando um storagePath se salvo.
         }
       }
     }
@@ -114,3 +126,4 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl: str
     return false;
   }
 };
+
