@@ -7,11 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, SearchX } from 'lucide-react';
 
 export default function ProductGallery() {
-  // Log changed from console.error to console.log
+  // Changed from console.error to console.log
   console.log("ProductGallery: Component rendering/re-rendering.");
   const { products: displayedProducts, isHydrated, isLoading, rawProducts, selectedCategory, searchTerm } = useProducts();
 
-  // Log changed from console.error to console.log
+  // Changed from console.error to console.log
   console.log("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
   console.log("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
   console.log("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content sample (first 2):", JSON.stringify(displayedProducts.slice(0,2).map(p => ({id: p.id, desc:p.description?.substring(0,15), imageUrl: p.imageUrl?.substring(0,40) + "..."}))));
@@ -19,7 +19,7 @@ export default function ProductGallery() {
 
 
   if (!isHydrated || isLoading) {
-    // Log changed from console.error to console.log
+    // Changed from console.error to console.log
     console.log("ProductGallery: Showing SKELETON loading state. !isHydrated:", !isHydrated, "isLoading:", isLoading);
     return (
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -37,7 +37,7 @@ export default function ProductGallery() {
 
   if (displayedProducts.length === 0) {
     if (searchTerm && searchTerm.trim() !== '') {
-      // Log changed from console.error to console.warn
+      // Changed from console.error to console.warn
       console.warn("ProductGallery: No products found for search term:", searchTerm);
       return (
         <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -52,7 +52,7 @@ export default function ProductGallery() {
       );
     }
     if (selectedCategory && rawProducts.length > 0) {
-      // Log changed from console.error to console.warn
+      // Changed from console.error to console.warn
       console.warn("ProductGallery: No products in selected category:", selectedCategory, "but rawProducts exist:", rawProducts.length);
       return (
         <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -68,7 +68,7 @@ export default function ProductGallery() {
     }
 
     if (rawProducts.length === 0 && !isLoading) {
-      // Log changed from console.error to console.warn
+      // Changed from console.error to console.warn
       console.warn("ProductGallery: No products registered AT ALL and not loading.");
       return (
         <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -83,7 +83,7 @@ export default function ProductGallery() {
       );
     }
 
-    // Log changed from console.error to console.warn
+    // Changed from console.error to console.warn
     console.warn("ProductGallery: displayedProducts is empty, but conditions for specific 'no products' messages not met. rawProducts count:", rawProducts.length, "isLoading:", isLoading);
     return (
          <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -98,20 +98,20 @@ export default function ProductGallery() {
     );
   }
 
-  // Log changed from console.error to console.log
+  // Changed from console.error to console.log
   console.log(`ProductGallery: About to MAP ${displayedProducts.length} product cards.`);
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {displayedProducts.map((product, index) => {
         if (!product || typeof product.id !== 'string') {
-          console.error(`ProductGallery: CRITICAL - Invalid product object or missing/invalid ID at index ${index} during map:`, product);
+          console.error(`ProductGallery: CRITICAL - Invalid product object or missing/invalid ID at index ${index} during map:`, product); // Kept error for critical data issue
           return (
             <div key={`error-${index}-${Math.random()}`} className="p-2 border border-destructive bg-destructive/10 text-destructive-foreground text-xs">
               Erro: Produto inválido no índice {index}. Verifique o console.
             </div>
           );
         }
-        // Log changed from console.error to console.log
+        // Changed from console.error to console.log
         console.log(`ProductGallery: Mapping product to ProductCard. ID: ${product.id}, Index: ${index}, Product imageUrl: ${product.imageUrl?.substring(0,30)}`);
         return <ProductCard key={product.id} product={product} />;
       })}

@@ -16,7 +16,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Log changed from console.error to console.warn
+  // Changed from console.error to console.warn to avoid Next.js error overlay for debug messages
   console.warn(`ProductCard: Function body executing. Product ID: ${product?.id}, Desc: ${product?.description?.substring(0,20)}, ImageURL: ${product?.imageUrl}`);
 
   const [imageError, setImageError] = useState(false);
@@ -24,7 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart, isCartVisibleToUser } = useCart();
 
   useEffect(() => {
-    // Log changed from console.error to console.warn
+    // Changed from console.error to console.warn
     console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
     console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
     setImageError(false); // Reset image error state if product changes
