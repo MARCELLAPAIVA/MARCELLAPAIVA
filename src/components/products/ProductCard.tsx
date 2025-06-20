@@ -15,6 +15,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Log inicial para verificar se o componente está sendo renderizado e quais dados recebe
   console.warn(`ProductCard: Component rendering. Product ID: ${product?.id}`);
 
   if (!product || !product.id || typeof product.id !== 'string') {
@@ -27,6 +28,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     );
   }
 
+  // Log detalhado do objeto product completo
   try {
     console.warn(`ProductCard: Full product object for ID ${product.id}:`, JSON.parse(JSON.stringify(product)));
   } catch (e) {
@@ -39,15 +41,19 @@ export default function ProductCard({ product }: ProductCardProps) {
   const safeDescription = product.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
   // Usar product.imageName para o alt text se existir, senão a descrição.
-  // product.imageName contém o nome original do arquivo que o usuário enviou.
   const altText = product.imageName || safeDescription.substring(0, 50) || "Imagem do produto";
 
+  // Log da URL da imagem que será tentada e do texto alternativo
   console.warn(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product.imageUrl}'. Alt text: '${altText}'`);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e.target);
+    console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
     if (e.target instanceof HTMLImageElement) {
-        console.error(`ProductCard: Failing image element src was: ${e.target.currentSrc || e.target.src}`);
+        // Log da URL que realmente falhou (pode ser a URL processada pelo next/image)
+        console.error(`ProductCard: Failing image element currentSrc was: ${e.target.currentSrc || "N/A"}`);
+        console.error(`ProductCard: Failing image element src attribute was: ${e.target.src || "N/A"}`);
+        // Forçar a imagem a mostrar o alt text se houver um erro, definindo src para algo inválido
+        // e.target.src = "invalid_url_to_force_alt_text"; // Comentado pois pode causar loop de erro
     }
   };
 
@@ -55,7 +61,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     addToCart(product);
   };
 
-  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://');
+  // Verificação se a imageUrl é válida e é uma string.
+  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
+
+  if (!isValidImageUrl) {
+    console.error(`ProductCard: Product ID ${product.id} has INVALID or MISSING imageUrl: '${product.imageUrl}'. Rendering placeholder or error state.`);
+  }
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
@@ -67,13 +78,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover"
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            priority={false}
+            priority={false} // Definir como false para não priorizar o carregamento de todas as imagens da galeria
             onError={handleImageError}
             data-ai-hint="product tobacco accessory"
           />
         ) : (
           <div className="flex items-center justify-center h-full w-full text-muted-foreground text-sm p-2 text-center">
-            {product.imageUrl ? `URL da imagem inválida ou ausente: ${String(product.imageUrl).substring(0,50)}...` : "Sem imagem"}
+            {product.imageUrl ? `URL da imagem inválida: ${String(product.imageUrl).substring(0,30)}...` : "Sem imagem"}
           </div>
         )}
       </div>
@@ -108,7 +119,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl}
+            disabled={!isValidImageUrl} // Desabilitar se a URL não for válida
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento
