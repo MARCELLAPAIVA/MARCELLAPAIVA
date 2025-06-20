@@ -11,7 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export function useProducts() {
-  console.warn("useProducts: Hook initializing / re-running.");
+  console.error("useProducts: HOOK INITIALIZED OR RE-RUN.");
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
@@ -24,7 +24,8 @@ export function useProducts() {
     setIsLoading(true);
     try {
       const firebaseProducts = await getProductsFromFirebase();
-      console.warn("useProducts: fetchProducts - firebaseProducts RECEIVED:", firebaseProducts);
+      console.warn("useProducts: fetchProducts - firebaseProducts RECEIVED:", JSON.stringify(firebaseProducts.map(p => ({id: p.id, desc: p.description?.substring(0,10), imgUrl: p.imageUrl?.substring(0,30) }))));
+      
       if (Array.isArray(firebaseProducts)) {
         const validProducts = firebaseProducts.filter(p => {
           if (!p || !p.id || typeof p.description !== 'string') {
@@ -32,8 +33,7 @@ export function useProducts() {
             return false;
           }
           if (typeof p.imageUrl !== 'string' || !p.imageUrl.startsWith('https://')) {
-            console.warn(`useProducts: fetchProducts - Product ID ${p.id} has invalid or missing imageUrl:`, p.imageUrl);
-            // Considerar se deve filtrar ou não. Por agora, vamos manter, mas logar.
+            console.warn(`useProducts: fetchProducts - Product ID ${p.id} ('${p.description?.substring(0,20)}') has invalid or missing imageUrl:`, p.imageUrl);
           }
           return true;
         });
@@ -70,15 +70,14 @@ export function useProducts() {
     try {
       const newProduct = await addProductToFirebase(productData, imageFile);
       if (newProduct) {
-        // fetchProducts(); // Opcional: productService pode já retornar o produto com ID para adição local
-        setRawProducts(prev => [newProduct, ...prev]); // Adiciona localmente para feedback mais rápido
+        setRawProducts(prev => [newProduct, ...prev]);
          toast({
           title: "Sucesso!",
           description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
           variant: "default",
         });
       } else {
-        throw new Error("addProductToFirebase returned null");
+        throw new Error("addProductToFirebase returned null or invalid product");
       }
     } catch (error) {
       console.error("useProducts: addProduct - FAILED to add product:", error);
@@ -90,7 +89,7 @@ export function useProducts() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast]); // fetchProducts removido das dependências se addProductToFirebase retornar o produto
+  }, [toast]);
 
   const removeProduct = useCallback(async (id: string, imageUrl: string, productName?: string) => {
     console.warn("useProducts: removeProduct CALLED for ID:", id);
@@ -105,7 +104,6 @@ export function useProducts() {
       });
     } catch (error) {
       console.error("useProducts: removeProduct - FAILED to remove product:", error);
-      // fetchProducts(); // Refetch em caso de falha para garantir consistência
       toast({
         title: "Erro ao Remover Produto",
         description: "Não foi possível remover o produto.",
@@ -114,7 +112,7 @@ export function useProducts() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast]); // fetchProducts removido, pois a remoção local é suficiente para o otimismo
+  }, [toast]);
 
   const products = useMemo(() => {
     console.warn("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);

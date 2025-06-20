@@ -1,7 +1,7 @@
 
 "use client";
 
-import Image from 'next/image';
+// import Image from 'next/image'; // Temporarily removed
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,84 +15,66 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Log inicial para verificar se o componente está sendo renderizado e quais dados recebe
-  console.warn(`ProductCard: Component rendering. Product ID: ${product?.id}`);
+  console.error(`ProductCard: Component rendering. Received product prop:`, product);
 
-  if (!product || !product.id || typeof product.id !== 'string') {
+  if (!product || typeof product.id !== 'string') {
     console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Cannot render card. Product was:", product);
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
-        <p>Erro: Dados do produto inválidos no ProductCard.</p>
+        <p>Erro: Dados do produto inválidos no ProductCard (product NULO ou ID inválido).</p>
         <pre className="text-xs whitespace-pre-wrap">{product ? JSON.stringify(product, null, 2) : "Produto Nulo/Indefinido"}</pre>
       </Card>
     );
   }
+  
+  // Log individual properties to catch errors if product is not fully formed
+  let safeDescription = "Descrição Indisponível";
+  let productName = "Nome Indisponível";
+  let imageUrlLog = "URL da Imagem Indisponível";
 
-  // Log detalhado do objeto product completo
   try {
-    console.warn(`ProductCard: Full product object for ID ${product.id}:`, JSON.parse(JSON.stringify(product)));
-  } catch (e) {
-    console.warn(`ProductCard: Full product object for ID ${product.id} (raw, stringify failed):`, product);
+    safeDescription = product.description || "Descrição padrão se nula";
+    productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
+    imageUrlLog = product.imageUrl || "URL padrão se nula";
+    console.warn(`ProductCard: Processing Product ID: ${product.id}, Description: ${productName}, ImageUrl: ${imageUrlLog}`);
+  } catch (e: any) {
+    console.error(`ProductCard: Error accessing product properties for ID ${product?.id}. Error: ${e.message}`, product);
+     return (
+      <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
+        <p>Erro: Falha ao acessar propriedades do produto ID: {product?.id}.</p>
+        <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(product, null, 2)}</pre>
+      </Card>
+    );
   }
+
 
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
-
-  const safeDescription = product.description || "Nome do produto indisponível";
-  const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  // Usar product.imageName para o alt text se existir, senão a descrição.
-  const altText = product.imageName || safeDescription.substring(0, 50) || "Imagem do produto";
-
-  // Log da URL da imagem que será tentada e do texto alternativo
-  console.warn(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product.imageUrl}'. Alt text: '${altText}'`);
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
-    if (e.target instanceof HTMLImageElement) {
-        // Log da URL que realmente falhou (pode ser a URL processada pelo next/image)
-        console.error(`ProductCard: Failing image element currentSrc was: ${e.target.currentSrc || "N/A"}`);
-        console.error(`ProductCard: Failing image element src attribute was: ${e.target.src || "N/A"}`);
-        // Forçar a imagem a mostrar o alt text se houver um erro, definindo src para algo inválido
-        // e.target.src = "invalid_url_to_force_alt_text"; // Comentado pois pode causar loop de erro
-    }
-  };
 
   const handleAddToCart = () => {
     addToCart(product);
   };
 
-  // Verificação se a imageUrl é válida e é uma string.
   const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
-
-  if (!isValidImageUrl) {
-    console.error(`ProductCard: Product ID ${product.id} has INVALID or MISSING imageUrl: '${product.imageUrl}'. Rendering placeholder or error state.`);
-  }
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
-      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center">
-        {isValidImageUrl ? (
-          <Image
-            src={product.imageUrl} // Esta deve ser a URL de download completa do Firebase Storage
-            alt={altText}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            priority={false} // Definir como false para não priorizar o carregamento de todas as imagens da galeria
-            onError={handleImageError}
-            data-ai-hint="product tobacco accessory"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full w-full text-muted-foreground text-sm p-2 text-center">
-            {product.imageUrl ? `URL da imagem inválida: ${String(product.imageUrl).substring(0,30)}...` : "Sem imagem"}
-          </div>
-        )}
+      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-2 text-center">
+        {/* Temporarily replacing Image component with text representation */}
+        <p className="text-xs text-muted-foreground">DEBUG:</p>
+        <p className="text-xs text-muted-foreground truncate" title={product.imageUrl}>
+          ImgURL: {product.imageUrl ? product.imageUrl.substring(0,50) + "..." : "N/A"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Valida? {isValidImageUrl ? "Sim" : "Não"}
+        </p>
+        {!isValidImageUrl && <p className="text-xs text-red-500">URL da imagem parece inválida!</p>}
       </div>
 
       <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
         <div>
           <p className="font-body text-sm text-foreground line-clamp-2 mb-1" title={safeDescription}>
-            {productName}
+            {productName} (ID: {product.id.substring(0,5)})
           </p>
           {user && user.status === 'approved' ? (
             typeof product.price === 'number' ? (
@@ -119,7 +101,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl} // Desabilitar se a URL não for válida
+            disabled={!isValidImageUrl}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento

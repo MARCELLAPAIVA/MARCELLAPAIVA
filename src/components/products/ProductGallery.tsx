@@ -7,12 +7,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, SearchX } from 'lucide-react';
 
 export default function ProductGallery() {
-  console.warn("ProductGallery: Component rendering/re-rendering.");
+  console.error("ProductGallery: Component rendering/re-rendering.");
   const { products: displayedProducts, isHydrated, isLoading, rawProducts, selectedCategory, searchTerm } = useProducts();
 
   console.warn("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
   console.warn("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
-  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content:", JSON.stringify(displayedProducts.map(p => ({id: p.id, imageUrl: p.imageUrl}))));
+  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content sample:", JSON.stringify(displayedProducts.slice(0,2).map(p => ({id: p.id, imageUrl: p.imageUrl?.substring(0,30)}))));
   console.warn("ProductGallery: State from useProducts - selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
 
 
@@ -103,7 +103,7 @@ export default function ProductGallery() {
             </div>
           );
         }
-        console.warn(`ProductGallery: Mapping product to ProductCard. ID: ${product.id}, Index: ${index}`);
+        console.warn(`ProductGallery: Mapping product to ProductCard. ID: ${product.id}, Index: ${index}, Product imageUrl: ${product.imageUrl?.substring(0,30)}`);
         return <ProductCard key={product.id} product={product} />;
       })}
     </div>
