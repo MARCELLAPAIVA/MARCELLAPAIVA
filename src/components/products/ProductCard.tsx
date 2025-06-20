@@ -21,9 +21,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    // Reset imageError when product prop changes
     setImageError(false);
-    console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, product);
+    console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product))); // Stringify/parse to ensure full object is logged
     if (product && product.imageUrl) {
       console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product.imageUrl}'`);
     } else {
@@ -70,8 +69,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
-
   const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
+  console.warn(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product.imageUrl}'. Alt text: '${altText}'`);
+
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
@@ -84,11 +84,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover"
             data-ai-hint="product tobacco"
-            priority={false} // Only set true for above-the-fold critical images
+            priority={false} 
             onError={(e) => {
               console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
               // @ts-ignore
-              console.error(`ProductCard: Failing image element src was: ${e.target.src}`);
+              console.error(`ProductCard: Failing image element src was: ${e.target?.src}`);
               setImageError(true);
             }}
           />

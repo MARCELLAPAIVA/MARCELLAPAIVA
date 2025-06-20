@@ -70,7 +70,6 @@ export function useProducts() {
     try {
       const newProduct = await addProductToFirebase(productData, imageFile);
       if (newProduct) {
-        // Refetch products to ensure the list is up-to-date with potentially sanitized URLs
         await fetchProducts(); 
         toast({
           title: "Sucesso!",
@@ -90,14 +89,14 @@ export function useProducts() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast, fetchProducts]); // Added fetchProducts dependency
+  }, [toast, fetchProducts]);
 
   const removeProduct = useCallback(async (id: string, imageUrl: string, productName?: string) => {
     console.warn("useProducts: removeProduct CALLED for ID:", id);
     setIsMutating(true);
     try {
       await deleteProductFromFirebase(id, imageUrl);
-      setRawProducts((prevProducts) => prevProducts.filter((p) => p.id !== id)); // Optimistic update
+      setRawProducts((prevProducts) => prevProducts.filter((p) => p.id !== id)); 
       toast({
         title: "Produto Removido",
         description: `O produto "${productName || 'selecionado'}" foi removido com sucesso.`,
