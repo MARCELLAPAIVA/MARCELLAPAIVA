@@ -18,36 +18,38 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Log MUITO importante no início do componente
   console.warn(`ProductCard: Component rendering. Product received:`, product);
 
-  const { user } = useAuth();
-  const { addToCart, isCartVisibleToUser } = useCart();
-
   if (!product || !product.id) {
     console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing an id. Cannot render card. Product was:", product);
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
-        <p>Erro: Dados do produto inválidos.</p>
+        <p>Erro: Dados do produto inválidos no ProductCard.</p>
+        <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(product, null, 2)}</pre>
       </Card>
     );
   }
 
+  const { user } = useAuth();
+  const { addToCart, isCartVisibleToUser } = useCart();
+
   const safeDescription = product.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  // const altText = product.imageName || product.description?.substring(0,50) || "Imagem do produto";
-
+  
+  // Apenas para ter certeza que imageUrl está presente e logá-la
+  const imageUrlForDisplay = product.imageUrl || "URL DA IMAGEM INDISPONÍVEL";
   console.log(`ProductCard: Processing product ID: ${product.id}, Name: '${productName}'. Image URL from prop: '${product.imageUrl}'`);
   
   const handleAddToCart = () => {
     addToCart(product);
   };
 
+  // VERSÃO SUPER SIMPLIFICADA PARA TESTE DE DADOS - SEM <Image />
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
-      {/* Imagem comentada temporariamente para simplificar */}
-      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center">
-        <p className="text-xs text-muted-foreground p-2 text-center">
+      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-2">
+        <p className="text-xs text-muted-foreground text-center break-all">
           ID: {product.id} <br />
-          Imagem (URL): {product.imageUrl ? product.imageUrl.substring(0, 50) + "..." : "N/A"} <br/>
-          (Preview da imagem desabilitado para teste)
+          Image URL (do objeto product): {imageUrlForDisplay} <br/>
+          (Preview da imagem desabilitado para teste de dados)
         </p>
       </div>
 
