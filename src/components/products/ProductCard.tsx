@@ -8,7 +8,6 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
@@ -17,19 +16,17 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
-  const [useStandardImg, setUseStandardImg] = useState(false); // State for fallback
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
   useEffect(() => {
-    console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
-    console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
+    // console.log(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
+    // console.log(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
     setImageError(false); // Reset image error state if product changes
-    setUseStandardImg(false); // Reset fallback state if product changes
   }, [product]);
 
   if (!product || typeof product.id !== 'string') {
-    console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Product was:", JSON.parse(JSON.stringify(product || {})));
+    console.warn("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Product was:", JSON.parse(JSON.stringify(product || {})));
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
         <p className="font-bold">Erro nos Dados do Produto!</p>
@@ -43,20 +40,15 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   const safeDescription = product.description || "Descrição Indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
+  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && (product.imageUrl.startsWith('https://firebasestorage.googleapis.com') || product.imageUrl.startsWith('http://localhost')); // Allow localhost for local testing
   const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
 
   const handleAddToCart = () => {
     addToCart(product);
   };
 
-  const handleNextImageError = () => {
-    console.warn(`ProductCard: Next/Image error for product ${product.id}. URL: ${product.imageUrl}. Falling back to standard <img>.`);
-    setUseStandardImg(true);
-  };
-
-  const handleStandardImageError = () => {
-    console.warn(`ProductCard: Standard <img> error for product ${product.id}. URL: ${product.imageUrl}.`);
+  const handleImageError = () => {
+    console.warn(`ProductCard: Standard <img> error for product ${product.id}. URL: ${product.imageUrl}`);
     setImageError(true);
   };
 
@@ -69,24 +61,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida ou ausente.</p>}
             <p className="truncate mt-1" title={product.imageUrl || "URL não disponível"}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
           </div>
-        ) : useStandardImg ? (
+        ) : isValidImageUrl ? (
           <img
             src={product.imageUrl}
             alt={altText}
             className="object-cover w-full h-full"
-            onError={handleStandardImageError}
+            onError={handleImageError}
             data-ai-hint="product tobacco"
-          />
-        ) : isValidImageUrl ? (
-          <Image
-            src={product.imageUrl} 
-            alt={altText}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover"
-            data-ai-hint="product tobacco"
-            priority={false} 
-            onError={handleNextImageError}
+            loading="lazy"
           />
         ) : (
           <div className="text-xs text-muted-foreground p-2">
@@ -127,7 +109,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl || imageError}
+            disabled={!isValidImageUrl || imageError} // Disable if no valid image or if it errored
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento
