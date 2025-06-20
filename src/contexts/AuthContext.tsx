@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           setUser(appUser);
           
-          // Handle redirection/toasts based on status after user state is set
           if (appUser.status === 'pending') {
              toast({ title: "Conta Pendente", description: "Sua conta está aguardando aprovação do administrador.", variant: "default", duration: 7000 });
           } else if (appUser.status === 'rejected') {
@@ -72,7 +71,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
 
         } else {
-          // User exists in Auth, but not in Firestore.
           const isUserAdminByEmail = ADMIN_EMAILS.includes(firebaseUser.email || '');
           if (isUserAdminByEmail) {
             const adminRole: UserRole = 'admin';
@@ -93,9 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             setUser(newAdminUser);
           } else {
-            // Non-admin user in Auth without Firestore doc.
-            // This case assumes a client whose Firestore document creation might have failed during registration.
-            // Create a 'pending' client document for them.
             console.warn(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not an admin. Creating a 'pending' client document.`);
             const clientRole: UserRole = 'client';
             const clientStatus: UserStatus = 'pending';
@@ -114,7 +109,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               status: clientStatus,
             };
             setUser(newClientUser);
-            // The existing toast for 'pending' status will be triggered when appUser.status is 'pending' above.
           }
         }
       } else {
@@ -127,19 +121,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]); 
 
   const register = useCallback(async (emailInput: string, passwordInput: string, usernameInput: string): Promise<boolean> => {
+    setIsLoading(true);
     if (!firebaseAuthService) {
       console.error("AuthContext: Firebase Auth service not initialized. Cannot register user.");
       toast({ title: "Erro de Configuração", description: "Não foi possível conectar ao serviço de autenticação.", variant: "destructive" });
+      setIsLoading(false);
       return false;
     }
-    setIsLoading(true);
+
     try {
       const userCredential = await createUserWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
       await updateProfile(userCredential.user, { displayName: usernameInput });
 
       const isUserAdmin = ADMIN_EMAILS.includes(emailInput);
       const initialRole: UserRole = isUserAdmin ? 'admin' : 'client';
-      const initialStatus: UserStatus = isUserAdmin ? 'approved' : 'pending'; // Clientes ficam pendentes
+      const initialStatus: UserStatus = isUserAdmin ? 'approved' : 'pending';
 
       await setUserData(userCredential.user.uid, {
         email: userCredential.user.email,
@@ -156,15 +152,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           variant: "default",
           duration: 7000,
         });
-      } else { // Admin (auto-approved)
+      } else { 
          toast({
           title: "Registro de Administrador Bem-Sucedido!",
           description: "Sua conta de administrador foi criada e está ativa.",
           variant: "default",
         });
       }
-      // User state will be updated by onAuthStateChanged which listens to Firebase Auth state.
-      // signInWithEmailAndPassword is not needed here after registration, onAuthStateChanged handles it.
       return true; 
     } catch (error: any) {
       console.error("AuthContext: Firebase registration error:", error);
@@ -184,16 +178,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const login = useCallback(async (emailInput: string, passwordInput: string): Promise<boolean> => {
+    setIsLoading(true);
     if (!firebaseAuthService) {
       console.error("AuthContext: Firebase Auth service not initialized. Cannot login user.");
       toast({ title: "Erro de Configuração", description: "Não foi possível conectar ao serviço de autenticação.", variant: "destructive" });
+      setIsLoading(false);
       return false;
     }
-    setIsLoading(true);
+
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
-      // onAuthStateChanged will handle fetching user data from Firestore (including status)
-      // and setting the user state. Page useEffects will then handle redirection based on this status.
       return true;
     } catch (error: any) {
       console.error("AuthContext: Firebase login error:", error);
@@ -211,10 +205,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const logout = useCallback(async () => {
+    setIsLoading(true);
     if (!firebaseAuthService) {
       console.error("AuthContext: Firebase Auth service not initialized. Cannot logout user.");
+      toast({
+        title: "Erro de Configuração",
+        description: "Serviço de autenticação indisponível para sair.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(true);
+
     try {
       await signOut(firebaseAuthService);
       setUser(null); 
@@ -245,4 +247,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
