@@ -41,7 +41,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="object-cover"
             data-ai-hint="product tobacco"
             onError={(e) => {
-              console.error(`ProductCard: Error loading image for product ${product.id} (${productName}). URL: ${product.imageUrl}`, e.currentTarget.currentSrc);
+              console.error(`ProductCard: Error loading image for product ${product.id} (${productName}). URL: ${product.imageUrl}`, e.currentTarget.src, e.currentTarget.currentSrc);
+            }}
+            onLoad={() => {
+              // console.log(`ProductCard: Successfully loaded image for product ${product.id} (${productName}). URL: ${product.imageUrl}`);
             }}
           />
         ) : (

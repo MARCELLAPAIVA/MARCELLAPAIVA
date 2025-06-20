@@ -1,6 +1,6 @@
 
 import { db, storage } from './firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc, setDoc, getDoc } from 'firebase/firestore'; // Added getDoc here
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Product } from './types';
 
@@ -39,12 +39,12 @@ export const addProductToFirebase = async (
     console.log("Firebase ProductService: Uploading to storage path:", storageRefPath);
     await uploadBytes(fileStorageRef, imageFile);
     const imageUrl = await getDownloadURL(fileStorageRef);
-    console.log("Firebase ProductService: Image uploaded. Download URL:", imageUrl); // Log crucial
+    console.log("Firebase ProductService: Image uploaded. Download URL:", imageUrl);
 
     const newProductDataWithImage = {
       ...productData,
-      imageUrl: imageUrl, // Salva a URL de download completa
-      imageName: imageFile.name, // Salva o nome original do arquivo para referência
+      imageUrl: imageUrl,
+      imageName: imageFile.name, 
       storagePath: storageRefPath, 
       createdAt: serverTimestamp(),
     };
@@ -79,12 +79,11 @@ export const getProductsFromFirebase = async (): Promise<Product[]> => {
     const querySnapshot = await getDocs(productsQuery);
     const products = querySnapshot.docs.map(docSnapshot => {
       const data = docSnapshot.data();
-      // Log para cada produto buscado
       // console.log("Firebase ProductService: Fetched product data from Firestore:", docSnapshot.id, data);
       return {
         id: docSnapshot.id,
         description: data.description,
-        imageUrl: data.imageUrl, // Esta é a URL que será usada
+        imageUrl: data.imageUrl, 
         imageName: data.imageName,
         price: data.price,
         category: data.category,
@@ -108,7 +107,8 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl?: st
 
   try {
     // Buscar o documento do produto para obter o storagePath, se não tivermos imageUrl confiável
-    const productDocSnap = await getDoc(doc(db, PRODUCTS_COLLECTION, productId));
+    const productDocRef = doc(db, PRODUCTS_COLLECTION, productId); // Define productDocRef here
+    const productDocSnap = await getDoc(productDocRef); // Use getDoc correctly
     const productData = productDocSnap.data();
     const storagePathToDelete = productData?.storagePath || (imageUrl ? ref(storage, imageUrl).fullPath : null);
 
@@ -136,3 +136,4 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl?: st
     return false;
   }
 };
+
