@@ -1,7 +1,7 @@
 
 "use client";
 
-// import Image from 'next/image'; // Temporarily removed
+import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,44 +9,58 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  console.error(`ProductCard: Component rendering. Received product prop:`, product);
+  console.error(`ProductCard: Component rendering. Product ID: ${product?.id}`);
+
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    // Reset imageError when product prop changes
+    setImageError(false);
+    console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, product);
+    if (product && product.imageUrl) {
+      console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product.imageUrl}'`);
+    } else {
+      console.error(`ProductCard (useEffect for product ${product?.id}): Product or product.imageUrl is MISSING/INVALID.`);
+    }
+  }, [product]);
+
 
   if (!product || typeof product.id !== 'string') {
     console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Cannot render card. Product was:", product);
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
-        <p>Erro: Dados do produto inválidos no ProductCard (product NULO ou ID inválido).</p>
-        <pre className="text-xs whitespace-pre-wrap">{product ? JSON.stringify(product, null, 2) : "Produto Nulo/Indefinido"}</pre>
+        <p className="font-bold">Erro nos Dados do Produto!</p>
+        <p className="text-xs">ID do produto ausente ou inválido.</p>
+        <pre className="mt-2 text-xs whitespace-pre-wrap bg-black/20 p-1 rounded">
+          {product ? JSON.stringify(product, null, 2) : "Produto Nulo/Indefinido"}
+        </pre>
       </Card>
     );
   }
   
-  // Log individual properties to catch errors if product is not fully formed
   let safeDescription = "Descrição Indisponível";
   let productName = "Nome Indisponível";
-  let imageUrlLog = "URL da Imagem Indisponível";
 
   try {
     safeDescription = product.description || "Descrição padrão se nula";
     productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-    imageUrlLog = product.imageUrl || "URL padrão se nula";
-    console.warn(`ProductCard: Processing Product ID: ${product.id}, Description: ${productName}, ImageUrl: ${imageUrlLog}`);
   } catch (e: any) {
-    console.error(`ProductCard: Error accessing product properties for ID ${product?.id}. Error: ${e.message}`, product);
+    console.error(`ProductCard: Error accessing product.description for ID ${product?.id}. Error: ${e.message}`, product);
      return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
-        <p>Erro: Falha ao acessar propriedades do produto ID: {product?.id}.</p>
-        <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(product, null, 2)}</pre>
+        <p className="font-bold">Erro ao Acessar Descrição</p>
+        <p className="text-xs">ID: {product?.id}</p>
+        <pre className="mt-2 text-xs whitespace-pre-wrap bg-black/20 p-1 rounded">{JSON.stringify(product, null, 2)}</pre>
       </Card>
     );
   }
-
 
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
@@ -57,24 +71,44 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
 
+  const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
+
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
-      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-2 text-center">
-        {/* Temporarily replacing Image component with text representation */}
-        <p className="text-xs text-muted-foreground">DEBUG:</p>
-        <p className="text-xs text-muted-foreground truncate" title={product.imageUrl}>
-          ImgURL: {product.imageUrl ? product.imageUrl.substring(0,50) + "..." : "N/A"}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Valida? {isValidImageUrl ? "Sim" : "Não"}
-        </p>
-        {!isValidImageUrl && <p className="text-xs text-red-500">URL da imagem parece inválida!</p>}
+      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
+        {isValidImageUrl && !imageError ? (
+          <Image
+            src={product.imageUrl}
+            alt={altText}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover"
+            data-ai-hint="product tobacco"
+            priority={false} // Only set true for above-the-fold critical images
+            onError={(e) => {
+              console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
+              // @ts-ignore
+              console.error(`ProductCard: Failing image element src was: ${e.target.src}`);
+              setImageError(true);
+            }}
+          />
+        ) : (
+          <div className="text-xs text-muted-foreground p-2">
+            {imageError ? (
+              <p className="text-destructive">Erro ao carregar imagem.</p>
+            ) : (
+              <p>Imagem indisponível.</p>
+            )}
+            {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida.</p>}
+            <p className="truncate mt-1" title={product.imageUrl}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
+          </div>
+        )}
       </div>
 
       <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
         <div>
           <p className="font-body text-sm text-foreground line-clamp-2 mb-1" title={safeDescription}>
-            {productName} (ID: {product.id.substring(0,5)})
+            {productName}
           </p>
           {user && user.status === 'approved' ? (
             typeof product.price === 'number' ? (
@@ -101,7 +135,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl}
+            disabled={!isValidImageUrl || imageError}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento

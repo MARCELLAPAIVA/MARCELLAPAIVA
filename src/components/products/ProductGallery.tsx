@@ -12,7 +12,7 @@ export default function ProductGallery() {
 
   console.warn("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
   console.warn("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
-  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content sample:", JSON.stringify(displayedProducts.slice(0,2).map(p => ({id: p.id, imageUrl: p.imageUrl?.substring(0,30)}))));
+  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content sample (first 2):", JSON.stringify(displayedProducts.slice(0,2).map(p => ({id: p.id, desc:p.description?.substring(0,15), imageUrl: p.imageUrl?.substring(0,40) + "..."}))));
   console.warn("ProductGallery: State from useProducts - selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
 
 
