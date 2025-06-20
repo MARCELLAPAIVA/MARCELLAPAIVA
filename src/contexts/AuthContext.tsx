@@ -28,10 +28,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// IMPORTANTE: Mantenha esta lista atualizada com os emails dos usuários
-// que devem ter privilégios de administrador.
-// Qualquer usuário que se registrar pelo site e não estiver nesta lista
-// terá o papel 'client' e status 'pending' (aguardando aprovação).
 const ADMIN_EMAILS = ['mvp@mttabacaria.com', 'msp@mttabacaria.com', 'jpv@mttabacaria.com', 'phv@mttabacaria.com'];
 
 
@@ -59,57 +55,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             role: userDataFromFirestore.role,
-            status: userDataFromFirestore.status,
+            status: userDataFromFirestore.status, // Status from Firestore is respected
             createdAt: userDataFromFirestore.createdAt,
           };
           setUser(appUser);
           
+          // Toast for existing user status if it's not 'approved' (e.g., admin manually changed it)
           if (appUser.status === 'pending') {
-             toast({ title: "Conta Pendente", description: "Sua conta está aguardando aprovação do administrador.", variant: "default", duration: 7000 });
+             toast({ title: "Conta Pendente", description: "Sua conta ainda está aguardando aprovação do administrador.", variant: "default", duration: 7000 });
           } else if (appUser.status === 'rejected') {
              toast({ title: "Conta Rejeitada", description: "Sua conta foi rejeitada. Entre em contato com o suporte.", variant: "destructive", duration: 7000 });
           }
 
         } else {
+          // New user (or document missing), create with 'approved' status
           const isUserAdminByEmail = ADMIN_EMAILS.includes(firebaseUser.email || '');
-          if (isUserAdminByEmail) {
-            const adminRole: UserRole = 'admin';
-            const adminStatus: UserStatus = 'approved';
-            await setUserData(firebaseUser.uid, {
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              role: adminRole,
-              status: adminStatus,
-              createdAt: serverTimestamp(),
-            });
-            const newAdminUser: AppUser = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              role: adminRole,
-              status: adminStatus,
-            };
-            setUser(newAdminUser);
-          } else {
-            console.warn(`AuthContext: User ${firebaseUser.uid} exists in Auth but not in Firestore and is not an admin. Creating a 'pending' client document.`);
-            const clientRole: UserRole = 'client';
-            const clientStatus: UserStatus = 'pending';
-            await setUserData(firebaseUser.uid, {
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName, 
-              role: clientRole,
-              status: clientStatus,
-              createdAt: serverTimestamp(),
-            });
-            const newClientUser: AppUser = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              role: clientRole,
-              status: clientStatus,
-            };
-            setUser(newClientUser);
-          }
+          const newRole: UserRole = isUserAdminByEmail ? 'admin' : 'client';
+          const newStatus: UserStatus = 'approved'; // All new users are approved
+
+          await setUserData(firebaseUser.uid, {
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName, 
+            role: newRole,
+            status: newStatus,
+            createdAt: serverTimestamp(),
+          });
+          const newUserDoc: AppUser = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            role: newRole,
+            status: newStatus,
+          };
+          setUser(newUserDoc);
+           toast({ title: "Bem-vindo(a)!", description: "Sua conta está ativa.", variant: "default" });
         }
       } else {
         setUser(null);
@@ -135,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const isUserAdmin = ADMIN_EMAILS.includes(emailInput);
       const initialRole: UserRole = isUserAdmin ? 'admin' : 'client';
-      const initialStatus: UserStatus = isUserAdmin ? 'approved' : 'pending';
+      const initialStatus: UserStatus = 'approved'; // All new users are 'approved'
 
       await setUserData(userCredential.user.uid, {
         email: userCredential.user.email,
@@ -145,20 +124,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         createdAt: serverTimestamp(),
       });
       
-      if (initialStatus === 'pending') {
-        toast({
-          title: "Cadastro Realizado!",
-          description: "Sua conta foi criada e está aguardando aprovação do administrador.",
-          variant: "default",
-          duration: 7000,
-        });
-      } else { 
-         toast({
-          title: "Registro de Administrador Bem-Sucedido!",
-          description: "Sua conta de administrador foi criada e está ativa.",
-          variant: "default",
-        });
-      }
+      toast({
+        title: "Cadastro Realizado!",
+        description: "Sua conta foi criada e está ativa.",
+        variant: "default",
+        duration: 7000,
+      });
       return true; 
     } catch (error: any) {
       console.error("AuthContext: Firebase registration error:", error);
@@ -188,6 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await signInWithEmailAndPassword(firebaseAuthService, emailInput, passwordInput);
+      // onAuthStateChanged will handle setting the user and showing status-related toasts if necessary
       return true;
     } catch (error: any) {
       console.error("AuthContext: Firebase login error:", error);
@@ -247,3 +219,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

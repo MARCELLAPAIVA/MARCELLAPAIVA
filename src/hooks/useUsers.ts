@@ -30,12 +30,8 @@ export function useUsers() {
     }
   }, [toast]);
 
-  // Initial fetch for all users or a specific filter if needed at hook initialization
-  // useEffect(() => {
-  //   fetchUsers({ status: 'pending' }); // Example: Fetch pending users by default
-  // }, [fetchUsers]);
 
-  const changeUserStatus = useCallback(async (uid: string, newStatus: UserStatus, currentStatusFilter?: UserStatus) => {
+  const changeUserStatus = useCallback(async (uid: string, newStatus: UserStatus, currentFilterValue?: UserStatus) => {
     setIsMutating(true);
     const userToUpdate = users.find(u => u.uid === uid);
     const userName = userToUpdate?.displayName || userToUpdate?.email || uid;
@@ -44,14 +40,9 @@ export function useUsers() {
       const success = await updateUserStatusInFirestore(uid, newStatus);
       if (success) {
         // After successfully changing the status, refetch the list of users
-        // using the same filter that was active (e.g., 'pending').
-        if (currentStatusFilter) {
-            await fetchUsers({status: currentStatusFilter});
-        } else {
-            // If no specific filter is known (e.g., if this function were called from another context),
-            // refetch all users or a default list.
-            await fetchUsers(); 
-        }
+        // using the same filter that was active.
+        // If currentFilterValue is undefined (meaning 'all' was selected), pass no filter to fetchUsers.
+        await fetchUsers(currentFilterValue ? { status: currentFilterValue } : undefined);
         
         toast({
           title: "Status Atualizado!",
@@ -71,13 +62,13 @@ export function useUsers() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast, fetchUsers, users]); // Added users to dependency array of changeUserStatus as it's used to find userToUpdate
+  }, [toast, fetchUsers, users]);
 
   return {
     users,
     isLoading,
     isMutating,
-    fetchUsers, // Expose fetchUsers to allow components to trigger fetches with specific filters
+    fetchUsers, 
     changeUserStatus,
   };
 }

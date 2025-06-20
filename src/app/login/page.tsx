@@ -23,12 +23,8 @@ function LoginContent() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      if (user.status === 'pending') {
-        return;
-      }
-      if (user.status === 'rejected') {
-        return;
-      }
+      // User status is handled by AuthContext toasts (e.g. if admin manually set to pending/rejected)
+      // For login, we primarily care if they are approved to redirect.
       if (user.status === 'approved') {
         if (user.role === 'admin') {
           router.push('/manage');
@@ -36,16 +32,23 @@ function LoginContent() {
           const redirectUrl = searchParams.get('redirect') || '/';
           router.push(redirectUrl);
         }
+      } else if (user.status === 'pending') {
+        // AuthContext will show a toast. User remains on login page.
+        // Or redirect to a specific "pending approval" page if desired.
+      } else if (user.status === 'rejected') {
+        // AuthContext will show a toast. User remains on login page.
       }
     }
-  }, [user, authLoading, router, searchParams, toast]);
+  }, [user, authLoading, router, searchParams]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
     const success = await login(email, password);
+    // If login initiated successfully, onAuthStateChanged and useEffect will handle redirection/toasts.
+    // If login call itself failed (e.g. bad creds), login() shows a toast.
     if (!success) {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Re-enable button only if login attempt failed pre-auth-state-change
     }
   };
 
@@ -57,6 +60,7 @@ function LoginContent() {
     );
   }
   
+  // If user is approved, useEffect will redirect. Show interim message.
   if (user && user.status === 'approved' && !authLoading) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
@@ -65,6 +69,8 @@ function LoginContent() {
     );
   }
 
+  // If user is pending/rejected (from manual admin change) or not logged in, show form.
+  // Toasts for pending/rejected are handled by AuthContext.
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-250px)] py-12">
       <Card className="w-full max-w-md bg-card border-border shadow-2xl">

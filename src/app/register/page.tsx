@@ -25,20 +25,17 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      // AuthContext.register or onAuthStateChanged will show toasts for pending/rejected.
-      // We only redirect if 'approved'.
+      // Since all new users are 'approved', they will be redirected.
+      // AuthContext.register shows "Cadastro Realizado!" toast.
       if (user.status === 'approved') {
         if (user.role === 'admin') {
           router.push('/manage');
         } else {
           router.push('/');
         }
-      } else if (user.status === 'pending') {
-        // User remains on register page. Toast is handled by AuthContext.
-        // If registration was successful, AuthContext.register shows "aguardando aprovação" toast.
-      } else if (user.status === 'rejected') {
-        // User remains on register page. Toast is handled by AuthContext.
       }
+      // If an existing user somehow lands here and is pending/rejected (manual admin change),
+      // AuthContext onAuthStateChanged might show a toast. They'd stay on this page.
     }
   }, [user, authLoading, router]);
 
@@ -51,19 +48,15 @@ export default function RegisterPage() {
     setError('');
     setIsSubmitting(true);
     const success = await register(email, password, username);
-    // If registration call was successful (returned true), AuthContext.register shows a success/pending toast.
-    // onAuthStateChanged in AuthContext will update user state.
-    // The useEffect above will handle redirection if status eventually becomes 'approved'.
+    // If registration call was successful (returned true), AuthContext.register shows a success toast.
+    // The useEffect above will handle redirection as status will be 'approved'.
     if (!success) {
       setIsSubmitting(false); // Only set to false if registration call failed (AuthContext.register shows error toast)
     }
-    // Don't setIsSubmitting(false) on success, as status messages or redirection will occur.
-    // If status is 'pending', user stays on this page, button remains disabled until message is seen.
-    // If register returns true (meaning it initiated), we can consider clearing form or keeping button disabled.
-    // For now, if 'pending', they will see the toast and button might re-enable after authLoading is false.
+    // Don't setIsSubmitting(false) on success, as redirection will occur.
   };
 
-  if (authLoading && !user) { // Show loading only if no user data yet and auth is loading
+  if (authLoading && !user) { 
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Carregando...</p>
@@ -71,8 +64,8 @@ export default function RegisterPage() {
     );
   }
 
+  // If user is somehow loaded and approved (e.g., navigated back), useEffect will redirect.
   if (user && user.status === 'approved' && !authLoading) {
-    // User is approved and loaded, useEffect will redirect.
      return (
       <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-primary text-xl">Redirecionando...</p>
@@ -80,16 +73,14 @@ export default function RegisterPage() {
     );
   }
   
-  // If user is loaded but status is pending/rejected, or no user and not loading, render the form.
-  // Toasts for pending/rejected are handled by AuthContext.
-
+  // Render the form if no user, or if user is loaded but not approved (e.g. admin changed status manually and user navigated here)
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-250px)] py-12">
       <Card className="w-full max-w-md bg-card border-border shadow-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline text-foreground">Criar Conta</CardTitle>
           <CardDescription className="text-muted-foreground font-body">
-            Crie sua conta para visualizar preços e mais. Seu cadastro passará por aprovação.
+            Crie sua conta para visualizar preços e solicitar orçamentos.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,7 +136,7 @@ export default function RegisterPage() {
             </div>
             {error && <p className="text-sm text-destructive font-body">{error}</p>}
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-headline text-lg py-3 rounded-md" disabled={isSubmitting || authLoading}>
-              {isSubmitting || (authLoading && !user) ? "Criando conta..." : ( // Show "Criando..." if submitting or initial auth load without user
+              {isSubmitting || (authLoading && !user) ? "Criando conta..." : (
                 <>
                   <UserPlus size={20} className="mr-2" />
                   Criar Conta

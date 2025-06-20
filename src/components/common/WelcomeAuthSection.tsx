@@ -28,15 +28,21 @@ export default function WelcomeAuthSection() {
   if (user) {
     const displayName = user.displayName || user.email;
 
+    // Since new users are auto-approved, 'pending' and 'rejected' states
+    // are less common for initial view unless an admin manually changed status.
+    // AuthContext will show toasts for these states if they occur.
+    // We simplify this component to mostly show the 'approved' state.
+
     if (user.status === 'pending') {
+      // This state might occur if an admin manually sets a user to pending.
       return (
         <section className="py-6 sm:py-8 text-center">
           <div className="flex flex-col items-center space-y-4">
             <AlertCircle size={48} className="text-amber-500" />
             <div>
               <h2 className="text-xl font-semibold text-foreground">Olá, {displayName}!</h2>
-              <p className="text-muted-foreground">Sua conta está aguardando aprovação do administrador.</p>
-              <p className="text-sm text-muted-foreground/80 mt-1">Você será notificado ou poderá tentar o login mais tarde.</p>
+              <p className="text-muted-foreground">Sua conta está atualmente pendente de revisão.</p>
+              <p className="text-sm text-muted-foreground/80 mt-1">Aguarde ou entre em contato com o suporte.</p>
             </div>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full max-w-xs sm:max-w-sm">
               <Button variant="outline" onClick={logout} className="w-full text-foreground border-foreground/50 hover:bg-muted text-base py-3 rounded-full">
@@ -49,13 +55,14 @@ export default function WelcomeAuthSection() {
     }
 
     if (user.status === 'rejected') {
+      // This state might occur if an admin manually sets a user to rejected.
       return (
         <section className="py-6 sm:py-8 text-center">
           <div className="flex flex-col items-center space-y-4">
             <AlertCircle size={48} className="text-destructive" />
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Conta Rejeitada</h2>
-              <p className="text-muted-foreground">Olá, {displayName}. Infelizmente, seu cadastro não foi aprovado.</p>
+              <h2 className="text-xl font-semibold text-foreground">Acesso Restrito</h2>
+              <p className="text-muted-foreground">Olá, {displayName}. Seu acesso à conta foi restringido.</p>
               <p className="text-sm text-muted-foreground/80 mt-1">Entre em contato com o suporte para mais informações.</p>
             </div>
              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full max-w-xs sm:max-w-sm">
@@ -68,7 +75,7 @@ export default function WelcomeAuthSection() {
       );
     }
 
-    // User is 'approved'
+    // User is 'approved' (default for new users now)
     return (
       <section className="py-6 sm:py-8 text-center">
         <div className="flex flex-col items-center space-y-4">
