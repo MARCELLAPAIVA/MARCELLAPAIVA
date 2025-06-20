@@ -28,7 +28,8 @@ Aplicação para visualização de produtos de tabacaria e acessórios, permitin
     ```bash
     git clone https://github.com/MARCELLAPAIVA/MARCELLAPAIVA.git 
     # Ou o URL do seu repositório específico da loja, se for diferente
-    cd NOME_DO_REPOSITORIO
+    cd NOME_DO_REPOSITORIO 
+    # (Se o código estiver em MARCELLAPAIVA/MARCELLAPAIVA, será cd MARCELLAPAIVA)
     ```
 2.  **Instale as dependências:**
     ```bash
