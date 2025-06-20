@@ -18,6 +18,12 @@ const firebaseConfig = {
   measurementId: "G-55KD657X9H"
 };
 
+// OAuth Domain Configuration Note:
+// For OAuth operations (like Google Sign-In, etc.) to work correctly,
+// ensure your deployed app's domain (e.g., "mt-tabacaria--whisk-51712.asia-east1.hosted.app")
+// is added to the "Authorized domains" list in the Firebase console:
+// Firebase Console > Authentication > Settings > Authorized domains.
+
 let app: FirebaseApp | undefined = undefined;
 let db: Firestore | undefined = undefined;
 let storage: FirebaseStorage | undefined = undefined;
@@ -41,7 +47,6 @@ try {
       console.log("Firebase: Firestore service initialized successfully.");
     } catch (e) {
       console.error("Firebase: Failed to initialize Firestore. Is it enabled in your Firebase project console? Error:", e);
-      // db remains undefined
     }
 
     try {
@@ -49,7 +54,6 @@ try {
       console.log("Firebase: Storage service initialized successfully.");
     } catch (e) {
       console.error("Firebase: Failed to initialize Firebase Storage. Is it enabled in your Firebase project console? Error:", e);
-      // storage remains undefined
     }
 
     try {
@@ -57,16 +61,12 @@ try {
       console.log("Firebase: Auth service initialized successfully.");
     } catch (e) {
       console.error("Firebase: Failed to initialize Firebase Auth. Is it enabled (Email/Password provider) in your Firebase project console? Error:", e);
-      // auth remains undefined
     }
   } else {
-    // This log will now only appear if 'app' genuinely couldn't be initialized AND firebaseConfig wasn't missing keys.
-    // This implies a more fundamental issue with initializeApp or getApp if config seemed okay.
     console.error("Firebase: Main Firebase app (app object) is undefined after initialization attempt, despite firebaseConfig seeming complete. Services (Firestore, Storage, Auth) will NOT be available.");
   }
 } catch (error) {
   console.error("Firebase: CRITICAL - Uncaught error during Firebase app or service initialization process. This usually indicates a problem with the firebaseConfig object or the Firebase SDK itself. Error:", error);
-  // app, db, storage, auth may remain undefined
 }
 
 console.log("Firebase: firebase.ts module loaded. Final status - app:", app ? `initialized (Project: ${app.options.projectId})` : 'undefined', "db:", db ? 'initialized' : 'undefined', "storage:", storage ? 'initialized' : 'undefined', "auth:", auth ? 'initialized' : 'undefined');

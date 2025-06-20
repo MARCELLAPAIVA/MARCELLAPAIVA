@@ -1,7 +1,6 @@
 
 "use client";
 
-import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
+import Image from 'next/image'; // Restored next/image
 import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
@@ -16,23 +16,22 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  console.error(`ProductCard: Component rendering. Product ID: ${product?.id}`);
+  // THIS IS THE MOST IMPORTANT LOG - IT MUST APPEAR IF THIS COMPONENT IS CALLED
+  console.error(`ProductCard: Function body executing. Product ID: ${product?.id}, Desc: ${product?.description?.substring(0,20)}, ImageURL: ${product?.imageUrl}`);
 
   const [imageError, setImageError] = useState(false);
+  const { user } = useAuth();
+  const { addToCart, isCartVisibleToUser } = useCart();
 
   useEffect(() => {
-    setImageError(false);
-    console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product))); // Stringify/parse to ensure full object is logged
-    if (product && product.imageUrl) {
-      console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product.imageUrl}'`);
-    } else {
-      console.error(`ProductCard (useEffect for product ${product?.id}): Product or product.imageUrl is MISSING/INVALID.`);
-    }
+    // Log ao montar e quando o produto mudar
+    console.error(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
+    console.error(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
+    setImageError(false); // Reset image error state if product changes
   }, [product]);
 
-
   if (!product || typeof product.id !== 'string') {
-    console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Cannot render card. Product was:", product);
+    console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Product was:", JSON.parse(JSON.stringify(product || {})));
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
         <p className="font-bold">Erro nos Dados do Produto!</p>
@@ -44,41 +43,21 @@ export default function ProductCard({ product }: ProductCardProps) {
     );
   }
   
-  let safeDescription = "Descrição Indisponível";
-  let productName = "Nome Indisponível";
-
-  try {
-    safeDescription = product.description || "Descrição padrão se nula";
-    productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  } catch (e: any) {
-    console.error(`ProductCard: Error accessing product.description for ID ${product?.id}. Error: ${e.message}`, product);
-     return (
-      <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
-        <p className="font-bold">Erro ao Acessar Descrição</p>
-        <p className="text-xs">ID: {product?.id}</p>
-        <pre className="mt-2 text-xs whitespace-pre-wrap bg-black/20 p-1 rounded">{JSON.stringify(product, null, 2)}</pre>
-      </Card>
-    );
-  }
-
-  const { user } = useAuth();
-  const { addToCart, isCartVisibleToUser } = useCart();
+  const safeDescription = product.description || "Descrição Indisponível";
+  const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
+  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
+  const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
 
   const handleAddToCart = () => {
     addToCart(product);
   };
-
-  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
-  const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
-  console.warn(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product.imageUrl}'. Alt text: '${altText}'`);
-
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
         {isValidImageUrl && !imageError ? (
           <Image
-            src={product.imageUrl}
+            src={product.imageUrl} // This is where the problematic URL is used
             alt={altText}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

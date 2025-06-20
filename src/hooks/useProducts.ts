@@ -11,7 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export function useProducts() {
-  console.error("useProducts: HOOK INITIALIZED OR RE-RUN.");
+  console.error("useProducts: HOOK INITIALIZED OR RE-RUNNING.");
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
@@ -20,11 +20,11 @@ export function useProducts() {
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
-    console.warn("useProducts: fetchProducts CALLED.");
+    console.error("useProducts: fetchProducts CALLED.");
     setIsLoading(true);
     try {
       const firebaseProducts = await getProductsFromFirebase();
-      console.warn("useProducts: fetchProducts - firebaseProducts RECEIVED:", JSON.stringify(firebaseProducts.map(p => ({id: p.id, desc: p.description?.substring(0,10), imgUrl: p.imageUrl?.substring(0,30) }))));
+      console.error("useProducts: fetchProducts - firebaseProducts RECEIVED:", JSON.stringify(firebaseProducts.map(p => ({id: p.id, desc: p.description?.substring(0,10), imgUrl: p.imageUrl?.substring(0,30) }))));
       
       if (Array.isArray(firebaseProducts)) {
         const validProducts = firebaseProducts.filter(p => {
@@ -52,12 +52,12 @@ export function useProducts() {
       setRawProducts([]);
     } finally {
       setIsLoading(false);
-      console.warn("useProducts: fetchProducts - FINISHED. isLoading is now FALSE.");
+      console.error("useProducts: fetchProducts - FINISHED. isLoading is now FALSE.");
     }
   }, [toast]);
 
   useEffect(() => {
-    console.warn("useProducts: useEffect to call fetchProducts TRIGGERED.");
+    console.error("useProducts: useEffect to call fetchProducts TRIGGERED.");
     fetchProducts();
   }, [fetchProducts]);
 
@@ -65,7 +65,7 @@ export function useProducts() {
     productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl' | 'imageName'>,
     imageFile: File
   ) => {
-    console.warn("useProducts: addProduct CALLED for:", productData.description);
+    console.error("useProducts: addProduct CALLED for:", productData.description);
     setIsMutating(true);
     try {
       const newProduct = await addProductToFirebase(productData, imageFile);
@@ -92,7 +92,7 @@ export function useProducts() {
   }, [toast, fetchProducts]);
 
   const removeProduct = useCallback(async (id: string, imageUrl: string, productName?: string) => {
-    console.warn("useProducts: removeProduct CALLED for ID:", id);
+    console.error("useProducts: removeProduct CALLED for ID:", id);
     setIsMutating(true);
     try {
       await deleteProductFromFirebase(id, imageUrl);
@@ -115,7 +115,7 @@ export function useProducts() {
   }, [toast]);
 
   const products = useMemo(() => {
-    console.warn("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
+    console.error("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
     let tempProducts = [...rawProducts];
 
     if (selectedCategory) {
@@ -130,12 +130,12 @@ export function useProducts() {
         return descriptionMatch || categoryMatch;
       });
     }
-    console.warn("useProducts: useMemo for 'products' done. Filtered products count:", tempProducts.length);
+    console.error("useProducts: useMemo for 'products' done. Filtered products count:", tempProducts.length);
     return tempProducts;
   }, [rawProducts, selectedCategory, searchTerm]);
 
   const isHydrated = !isLoading;
-  console.warn("useProducts: hook returning. Values - isLoading:", isLoading, "isHydrated:", isHydrated, "filtered products count:", products.length, "rawProducts count:", rawProducts.length);
+  console.error("useProducts: hook returning. Values - isLoading:", isLoading, "isHydrated:", isHydrated, "filtered products count:", products.length, "rawProducts count:", rawProducts.length);
 
   return {
     products,

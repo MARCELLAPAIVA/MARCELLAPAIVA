@@ -10,14 +10,14 @@ export default function ProductGallery() {
   console.error("ProductGallery: Component rendering/re-rendering.");
   const { products: displayedProducts, isHydrated, isLoading, rawProducts, selectedCategory, searchTerm } = useProducts();
 
-  console.warn("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
-  console.warn("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
-  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content sample (first 2):", JSON.stringify(displayedProducts.slice(0,2).map(p => ({id: p.id, desc:p.description?.substring(0,15), imageUrl: p.imageUrl?.substring(0,40) + "..."}))));
-  console.warn("ProductGallery: State from useProducts - selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
+  console.error("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
+  console.error("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
+  console.error("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content sample (first 2):", JSON.stringify(displayedProducts.slice(0,2).map(p => ({id: p.id, desc:p.description?.substring(0,15), imageUrl: p.imageUrl?.substring(0,40) + "..."}))));
+  console.error("ProductGallery: State from useProducts - selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
 
 
   if (!isHydrated || isLoading) {
-    console.warn("ProductGallery: Showing SKELETON loading state. !isHydrated:", !isHydrated, "isLoading:", isLoading);
+    console.error("ProductGallery: Showing SKELETON loading state. !isHydrated:", !isHydrated, "isLoading:", isLoading);
     return (
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {Array.from({ length: 8 }).map((_, index) => (
@@ -91,7 +91,7 @@ export default function ProductGallery() {
     );
   }
 
-  console.warn(`ProductGallery: About to MAP ${displayedProducts.length} product cards.`);
+  console.error(`ProductGallery: About to MAP ${displayedProducts.length} product cards.`);
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {displayedProducts.map((product, index) => {
@@ -103,7 +103,7 @@ export default function ProductGallery() {
             </div>
           );
         }
-        console.warn(`ProductGallery: Mapping product to ProductCard. ID: ${product.id}, Index: ${index}, Product imageUrl: ${product.imageUrl?.substring(0,30)}`);
+        console.error(`ProductGallery: Mapping product to ProductCard. ID: ${product.id}, Index: ${index}, Product imageUrl: ${product.imageUrl?.substring(0,30)}`);
         return <ProductCard key={product.id} product={product} />;
       })}
     </div>
