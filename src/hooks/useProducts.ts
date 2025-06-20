@@ -19,12 +19,14 @@ export function useProducts() {
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
+    console.log("useProducts: fetchProducts called.");
     setIsLoading(true);
     try {
       const firebaseProducts = await getProductsFromFirebase();
+      console.log("useProducts: fetchProducts - firebaseProducts received:", firebaseProducts);
       setRawProducts(firebaseProducts);
     } catch (error) {
-      console.error("Failed to load products from Firebase:", error);
+      console.error("useProducts: Failed to load products from Firebase:", error);
       toast({
         title: "Erro ao Carregar Produtos",
         description: "Não foi possível buscar os produtos do servidor. Tente novamente mais tarde.",
@@ -33,10 +35,12 @@ export function useProducts() {
       setRawProducts([]);
     } finally {
       setIsLoading(false);
+      console.log("useProducts: fetchProducts finished. isLoading set to false.");
     }
   }, [toast]);
 
   useEffect(() => {
+    console.log("useProducts: useEffect to fetchProducts triggered.");
     fetchProducts();
   }, [fetchProducts]);
 
@@ -89,6 +93,7 @@ export function useProducts() {
   }, [toast, fetchProducts]);
 
   const products = useMemo(() => {
+    console.log("useProducts: useMemo for 'products' recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
     let tempProducts = [...rawProducts];
 
     if (selectedCategory) {
@@ -98,17 +103,18 @@ export function useProducts() {
     if (searchTerm && searchTerm.trim() !== '') {
       const lowercasedSearchTerm = searchTerm.toLowerCase();
       tempProducts = tempProducts.filter(product => {
-        // Verifica se product.description existe e é uma string antes de chamar toLowerCase()
         const descriptionMatch = product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(lowercasedSearchTerm);
-        // Verifica se product.category existe e é uma string antes de chamar toLowerCase()
         const categoryMatch = product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(lowercasedSearchTerm);
         return descriptionMatch || categoryMatch;
       });
     }
+    console.log("useProducts: useMemo for 'products' done. tempProducts count:", tempProducts.length);
     return tempProducts;
   }, [rawProducts, selectedCategory, searchTerm]);
 
   const isHydrated = !isLoading;
+  console.log("useProducts: hook returning. isHydrated:", isHydrated, "isLoading:", isLoading, "products count:", products.length);
+
 
   return {
     products, // Filtered/searched products

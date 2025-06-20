@@ -1,7 +1,7 @@
 
 "use client";
 
-import Image from 'next/image';
+// import Image from 'next/image'; // Comentado temporariamente
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,64 +15,42 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Log inicial para confirmar que o componente está sendo chamado e com qual produto
-  console.log(`ProductCard: Component rendering. Product ID: ${product?.id}`);
-  console.log("ProductCard: Full product object:", product);
+  // Log MUITO importante no início do componente
+  console.warn(`ProductCard: Component rendering. Product received:`, product);
 
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
-  // Verificações para garantir que product e product.description existem antes de usá-los
-  const safeDescription = product?.description || "Nome do produto indisponível";
-  const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const altText = product?.imageName || product?.description?.substring(0,50) || "Imagem do produto";
+  if (!product || !product.id) {
+    console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing an id. Cannot render card. Product was:", product);
+    return (
+      <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
+        <p>Erro: Dados do produto inválidos.</p>
+      </Card>
+    );
+  }
 
-  // Log crucial para depuração da URL da imagem
-  console.log(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product?.imageUrl}'. Alt text: '${altText}'`);
+  const safeDescription = product.description || "Nome do produto indisponível";
+  const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
+  // const altText = product.imageName || product.description?.substring(0,50) || "Imagem do produto";
+
+  console.log(`ProductCard: Processing product ID: ${product.id}, Name: '${productName}'. Image URL from prop: '${product.imageUrl}'`);
   
   const handleAddToCart = () => {
-    if(product) { // Garante que product não é null/undefined
-      addToCart(product);
-    } else {
-      console.error("ProductCard: addToCart called with null/undefined product.");
-    }
+    addToCart(product);
   };
-
-  if (!product) {
-    console.error("ProductCard: product prop is null or undefined. Cannot render card.");
-    return null; // Ou algum fallback visual
-  }
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
-      <div className="aspect-square relative w-full overflow-hidden">
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={altText}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover"
-            data-ai-hint="product tobacco"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              console.error(`ProductCard: Error loading image for product ${product.id} ('${productName}'). Attempted URL: '${product.imageUrl}'. Current src attribute: '${target.currentSrc}'. Natural width: ${target.naturalWidth}`, e);
-            }}
-            onLoad={() => {
-              // console.log(`ProductCard: Successfully loaded image for product ${product.id} (${productName}). URL: ${product.imageUrl}`);
-            }}
-          />
-        ) : (
-           <Image
-            src={"https://placehold.co/400x400.png"} 
-            alt={altText} 
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover"
-            data-ai-hint="product tobacco placeholder"
-          />
-        )}
+      {/* Imagem comentada temporariamente para simplificar */}
+      <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center">
+        <p className="text-xs text-muted-foreground p-2 text-center">
+          ID: {product.id} <br />
+          Imagem (URL): {product.imageUrl ? product.imageUrl.substring(0, 50) + "..." : "N/A"} <br/>
+          (Preview da imagem desabilitado para teste)
+        </p>
       </div>
+
       <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
         <div>
           <p className="font-body text-sm text-foreground line-clamp-2 mb-1">
@@ -103,7 +81,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm" 
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!product} // Desabilita se product for nulo
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento
