@@ -8,7 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
-import Image from 'next/image'; // Restored next/image
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
@@ -16,17 +16,17 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // THIS IS THE MOST IMPORTANT LOG - IT MUST APPEAR IF THIS COMPONENT IS CALLED
-  console.error(`ProductCard: Function body executing. Product ID: ${product?.id}, Desc: ${product?.description?.substring(0,20)}, ImageURL: ${product?.imageUrl}`);
+  // Log changed from console.error to console.warn
+  console.warn(`ProductCard: Function body executing. Product ID: ${product?.id}, Desc: ${product?.description?.substring(0,20)}, ImageURL: ${product?.imageUrl}`);
 
   const [imageError, setImageError] = useState(false);
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
   useEffect(() => {
-    // Log ao montar e quando o produto mudar
-    console.error(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
-    console.error(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
+    // Log changed from console.error to console.warn
+    console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
+    console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
     setImageError(false); // Reset image error state if product changes
   }, [product]);
 
@@ -45,6 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   const safeDescription = product.description || "Descrição Indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
+  // Ensure imageUrl is a string and looks like a Firebase Storage URL before using it.
   const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
   const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
 
@@ -57,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
         {isValidImageUrl && !imageError ? (
           <Image
-            src={product.imageUrl} // This is where the problematic URL is used
+            src={product.imageUrl} 
             alt={altText}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -65,9 +66,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             data-ai-hint="product tobacco"
             priority={false} 
             onError={(e) => {
-              console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
+              console.warn(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
               // @ts-ignore
-              console.error(`ProductCard: Failing image element src was: ${e.target?.src}`);
+              console.warn(`ProductCard: Failing image element src was: ${e.target?.src}`);
               setImageError(true);
             }}
           />
@@ -78,8 +79,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             ) : (
               <p>Imagem indisponível.</p>
             )}
-            {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida.</p>}
-            <p className="truncate mt-1" title={product.imageUrl}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
+            {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida ou ausente.</p>}
+             <p className="truncate mt-1" title={product.imageUrl || "URL não disponível"}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
           </div>
         )}
       </div>
@@ -114,7 +115,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl || imageError}
+            disabled={!isValidImageUrl || imageError} // Disable if URL is invalid or image error occurred
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento
