@@ -11,7 +11,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export function useProducts() {
-  // Changed to console.log for general hook initialization
   console.log("useProducts: HOOK INITIALIZED OR RE-RUNNING.");
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,13 +20,11 @@ export function useProducts() {
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
-    // Changed to console.warn
-    console.warn("useProducts: fetchProducts CALLED.");
+    console.log("useProducts: fetchProducts CALLED.");
     setIsLoading(true);
     try {
       const firebaseProducts = await getProductsFromFirebase();
-      // Changed to console.warn
-      console.warn("useProducts: fetchProducts - firebaseProducts RECEIVED:", JSON.stringify(firebaseProducts.map(p => ({id: p.id, desc: p.description?.substring(0,10), imgUrl: p.imageUrl?.substring(0,30) }))));
+      console.log("useProducts: fetchProducts - firebaseProducts RECEIVED count:", firebaseProducts.length);
       
       if (Array.isArray(firebaseProducts)) {
         const validProducts = firebaseProducts.filter(p => {
@@ -55,13 +52,11 @@ export function useProducts() {
       setRawProducts([]);
     } finally {
       setIsLoading(false);
-      // Changed to console.warn
-      console.warn("useProducts: fetchProducts - FINISHED. isLoading is now FALSE.");
+      console.log("useProducts: fetchProducts - FINISHED. isLoading is now FALSE.");
     }
   }, [toast]);
 
   useEffect(() => {
-    // Changed to console.log to prevent Next.js error overlay
     console.log("useProducts: useEffect to call fetchProducts TRIGGERED.");
     fetchProducts();
   }, [fetchProducts]);
@@ -70,8 +65,7 @@ export function useProducts() {
     productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl' | 'imageName'>,
     imageFile: File
   ) => {
-    // Changed to console.warn
-    console.warn("useProducts: addProduct CALLED for:", productData.description);
+    console.log("useProducts: addProduct CALLED for:", productData.description);
     setIsMutating(true);
     try {
       const newProduct = await addProductToFirebase(productData, imageFile);
@@ -98,8 +92,7 @@ export function useProducts() {
   }, [toast, fetchProducts]);
 
   const removeProduct = useCallback(async (id: string, imageUrl: string, productName?: string) => {
-    // Changed to console.warn
-    console.warn("useProducts: removeProduct CALLED for ID:", id);
+    console.log("useProducts: removeProduct CALLED for ID:", id);
     setIsMutating(true);
     try {
       await deleteProductFromFirebase(id, imageUrl);
@@ -122,7 +115,6 @@ export function useProducts() {
   }, [toast]);
 
   const products = useMemo(() => {
-    // Changed to console.log to prevent Next.js error overlay
     console.log("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
     let tempProducts = [...rawProducts];
 
@@ -138,14 +130,12 @@ export function useProducts() {
         return descriptionMatch || categoryMatch;
       });
     }
-    // Changed to console.warn
-    console.warn("useProducts: useMemo for 'products' done. Filtered products count:", tempProducts.length);
+    console.log("useProducts: useMemo for 'products' done. Filtered products count:", tempProducts.length);
     return tempProducts;
   }, [rawProducts, selectedCategory, searchTerm]);
 
   const isHydrated = !isLoading;
-  // Changed to console.warn
-  console.warn("useProducts: hook returning. Values - isLoading:", isLoading, "isHydrated:", isHydrated, "filtered products count:", products.length, "rawProducts count:", rawProducts.length);
+  console.log("useProducts: hook returning. Values - isLoading:", isLoading, "isHydrated:", isHydrated, "filtered products count:", products.length, "rawProducts count:", rawProducts.length);
 
   return {
     products,

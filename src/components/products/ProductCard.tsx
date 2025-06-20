@@ -16,18 +16,16 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Changed from console.error to console.warn to avoid Next.js error overlay
-  console.warn(`ProductCard: Function body executing. Product ID: ${product?.id}, Desc: ${product?.description?.substring(0,20)}, ImageURL: ${product?.imageUrl}`);
-
   const [imageError, setImageError] = useState(false);
+  const [useStandardImg, setUseStandardImg] = useState(false); // State for fallback
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
   useEffect(() => {
-    // Changed from console.error to console.warn
     console.warn(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
     console.warn(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
     setImageError(false); // Reset image error state if product changes
+    setUseStandardImg(false); // Reset fallback state if product changes
   }, [product]);
 
   if (!product || typeof product.id !== 'string') {
@@ -45,7 +43,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   const safeDescription = product.description || "Descrição Indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  // Ensure imageUrl is a string and looks like a Firebase Storage URL before using it.
   const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://firebasestorage.googleapis.com');
   const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
 
@@ -53,10 +50,34 @@ export default function ProductCard({ product }: ProductCardProps) {
     addToCart(product);
   };
 
+  const handleNextImageError = () => {
+    console.warn(`ProductCard: Next/Image error for product ${product.id}. URL: ${product.imageUrl}. Falling back to standard <img>.`);
+    setUseStandardImg(true);
+  };
+
+  const handleStandardImageError = () => {
+    console.warn(`ProductCard: Standard <img> error for product ${product.id}. URL: ${product.imageUrl}.`);
+    setImageError(true);
+  };
+
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
-        {isValidImageUrl && !imageError ? (
+        {imageError ? (
+          <div className="text-xs text-muted-foreground p-2">
+            <p className="text-destructive">Erro ao carregar imagem.</p>
+            {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida ou ausente.</p>}
+            <p className="truncate mt-1" title={product.imageUrl || "URL não disponível"}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
+          </div>
+        ) : useStandardImg ? (
+          <img
+            src={product.imageUrl}
+            alt={altText}
+            className="object-cover w-full h-full"
+            onError={handleStandardImageError}
+            data-ai-hint="product tobacco"
+          />
+        ) : isValidImageUrl ? (
           <Image
             src={product.imageUrl} 
             alt={altText}
@@ -65,20 +86,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="object-cover"
             data-ai-hint="product tobacco"
             priority={false} 
-            onError={(e) => {
-              console.warn(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e);
-              // @ts-ignore
-              console.warn(`ProductCard: Failing image element src was: ${e.target?.src}`);
-              setImageError(true);
-            }}
+            onError={handleNextImageError}
           />
         ) : (
           <div className="text-xs text-muted-foreground p-2">
-            {imageError ? (
-              <p className="text-destructive">Erro ao carregar imagem.</p>
-            ) : (
-              <p>Imagem indisponível.</p>
-            )}
+            <p>Imagem indisponível.</p>
             {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida ou ausente.</p>}
              <p className="truncate mt-1" title={product.imageUrl || "URL não disponível"}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
           </div>
@@ -115,7 +127,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl || imageError} // Disable if URL is invalid or image error occurred
+            disabled={!isValidImageUrl || imageError}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento

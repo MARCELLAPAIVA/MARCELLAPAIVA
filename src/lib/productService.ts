@@ -8,19 +8,19 @@ const PRODUCTS_COLLECTION = 'products';
 
 // Função para gerar um nome de arquivo seguro e padronizado para o Storage
 const getImageNameForStorage = (originalFileName: string, productId: string) => {
-  console.warn("Firebase ProductService: getImageNameForStorage - Original filename:", originalFileName);
+  console.log("Firebase ProductService: getImageNameForStorage - Original filename for sanitization:", originalFileName);
   const extension = originalFileName.split('.').pop()?.toLowerCase() || 'jpg';
   const baseName = originalFileName.substring(0, originalFileName.lastIndexOf('.') > 0 ? originalFileName.lastIndexOf('.') : originalFileName.length);
   
   const safeOriginalFileNameBase = baseName
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-zA-Z0-9_.-]/g, '_') // Substitui caracteres não seguros por _ (permite ., -)
-    .replace(/_{2,}/g, '_') // Substitui múltiplos underscores por um único
-    .substring(0, 50); // Trunca para segurança/consistência
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[^a-zA-Z0-9_.-]/g, '_') // Replace unsafe characters with _ (allows ., -)
+    .replace(/_{2,}/g, '_') // Replace multiple underscores with a single one
+    .substring(0, 50); // Truncate for safety/consistency
 
-  const finalName = `product_${productId}_${safeOriginalFileNameBase}_${Date.now()}.${extension}`;
-  console.warn("Firebase ProductService: getImageNameForStorage - Sanitized filename for storage:", finalName);
-  return finalName;
+  const finalSanitizedName = `product_${productId}_${safeOriginalFileNameBase}_${Date.now()}.${extension}`;
+  console.log("Firebase ProductService: getImageNameForStorage - Sanitized filename for storage:", finalSanitizedName);
+  return finalSanitizedName;
 };
 
 export const addProductToFirebase = async (
@@ -31,49 +31,48 @@ export const addProductToFirebase = async (
       console.error("Firebase ProductService: Firestore 'db' or Storage 'storage' is not properly initialized. Cannot add product. Check Firebase configuration and ensure services are enabled.");
       return null;
   }
-  console.warn("Firebase ProductService: addProductToFirebase CALLED with productData:", productData.description, "and original imageFile name:", imageFile.name);
+  console.warn("Firebase ProductService: addProductToFirebase CALLED with productData description:", productData.description, "and original imageFile name:", imageFile.name);
 
   try {
-    const productDocRef = doc(collection(db, PRODUCTS_COLLECTION)); // Gera ID antes para usar no nome do arquivo
+    const productDocRef = doc(collection(db, PRODUCTS_COLLECTION)); 
     const productId = productDocRef.id;
 
-    const storageFileName = getImageNameForStorage(imageFile.name, productId); // Usa o nome original do arquivo para sanitização
+    const storageFileName = getImageNameForStorage(imageFile.name, productId); 
     const storageRefPath = `${PRODUCTS_COLLECTION}/${productId}/${storageFileName}`;
     const fileStorageRef = ref(storage, storageRefPath);
     
-    console.warn("Firebase ProductService: Uploading to storage path:", storageRefPath);
+    console.warn("Firebase ProductService: Uploading to storage path:", storageRefPath, "using sanitized filename:", storageFileName);
     await uploadBytes(fileStorageRef, imageFile);
     const imageUrl = await getDownloadURL(fileStorageRef);
-    console.warn("Firebase ProductService: Image uploaded. SANITIZED storageFileName:", storageFileName, "Download URL:", imageUrl);
+    console.warn("Firebase ProductService: Image uploaded. Sanitized storageFileName used:", storageFileName, "Final Download URL:", imageUrl);
 
     const newProductDataWithImage = {
       ...productData,
-      imageUrl: imageUrl, // URL para o arquivo com nome SANITIZADO
-      imageName: imageFile.name, // Nome original do arquivo enviado pelo usuário (para referência)
-      storagePath: storageRefPath, // Caminho no storage para o arquivo com nome SANITIZADO
+      imageUrl: imageUrl, 
+      imageName: imageFile.name, // Store original name for reference if needed
+      storagePath: storageRefPath, // Store the full storage path for easier deletion if structure changes
       createdAt: serverTimestamp(),
     };
 
-    await setDoc(productDocRef, newProductDataWithImage); // Salva o novo produto com ID gerado
-    console.warn("Firebase ProductService: Product data saved to Firestore with ID:", productId, "Data:", newProductDataWithImage);
+    await setDoc(productDocRef, newProductDataWithImage); 
+    console.warn("Firebase ProductService: Product data saved to Firestore with ID:", productId, "Data:", JSON.stringify(newProductDataWithImage, null, 2));
 
-    // Para retorno imediato, simulamos o timestamp. Firestore o terá corretamente.
+    // Construct the product object as it would be returned/used in the app
     const createdProduct: Product = {
         id: productId,
         description: productData.description,
         price: productData.price,
         category: productData.category,
-        imageUrl: imageUrl, // URL para o arquivo sanitizado
-        imageName: imageFile.name, // Nome original
-        createdAt: Date.now(), // Simulação para retorno imediato
+        imageUrl: imageUrl, 
+        imageName: imageFile.name, 
+        createdAt: Date.now(), // Approximate, Firestore timestamp is more accurate
     };
     console.warn("Firebase ProductService: addProductToFirebase RETURNING product object:", createdProduct);
     return createdProduct;
 
   } catch (error) {
     console.error("Firebase ProductService: Error adding product to Firebase: ", error);
-    // Considerar relançar o erro se o chamador precisar saber: throw error;
-    return null; // Ou retornar null para indicar falha
+    return null; 
   }
 };
 
@@ -88,21 +87,20 @@ export const getProductsFromFirebase = async (): Promise<Product[]> => {
     const querySnapshot = await getDocs(productsQuery);
     const products = querySnapshot.docs.map(docSnapshot => {
       const data = docSnapshot.data();
-      const createdAtTimestamp = data.createdAt as Timestamp; // Cast to Firebase Timestamp
+      const createdAtTimestamp = data.createdAt as Timestamp; // Explicitly type data.createdAt
       const productItem: Product = {
         id: docSnapshot.id,
         description: data.description || "Descrição Indisponível",
-        imageUrl: data.imageUrl || "", // Fornecer um fallback
-        imageName: data.imageName || "",
-        price: typeof data.price === 'number' ? data.price : 0, // Fornecer um fallback
-        category: data.category || "Sem Categoria",
-        createdAt: createdAtTimestamp?.toDate?.().getTime() || data.createdAt || Date.now(),
+        imageUrl: data.imageUrl || "", 
+        imageName: data.imageName || "", // Ensure imageName is fetched
+        price: typeof data.price === 'number' ? data.price : 0, // Ensure price is a number
+        category: data.category || "Sem Categoria", // Ensure category exists
+        createdAt: createdAtTimestamp?.toDate?.().getTime() || data.createdAt || Date.now(), // Handle potential undefined or already number
       };
-      // console.warn(`useProducts: getProductsFromFirebase - Fetched product ID: ${productItem.id}, Image URL: ${productItem.imageUrl}`);
       if (!productItem.imageUrl) {
-        console.error(`useProducts: getProductsFromFirebase - Product ID ${productItem.id} has EMPTY imageUrl in Firestore.`);
+        console.warn(`useProducts: getProductsFromFirebase - Product ID ${productItem.id} has EMPTY imageUrl in Firestore.`);
       } else if (typeof productItem.imageUrl !== 'string' || !productItem.imageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-        console.error(`useProducts: getProductsFromFirebase - Product ID ${productItem.id} has INVALID imageUrl in Firestore:`, productItem.imageUrl);
+        console.warn(`useProducts: getProductsFromFirebase - Product ID ${productItem.id} has INVALID imageUrl in Firestore:`, productItem.imageUrl);
       }
       return productItem;
     });
@@ -127,26 +125,26 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl?: st
     
     if (!productDocSnap.exists()) {
       console.warn("Firebase ProductService: Product document not found for deletion, ID:", productId);
-      // Se o documento não existe, talvez a imagem também não.
-      // Se houver uma imageUrl, tentamos excluir de qualquer maneira como fallback.
+      // Attempt to delete image from storage if direct URL is provided and it looks like a Firebase Storage URL
       if (imageUrl && imageUrl.startsWith('https://firebasestorage.googleapis.com')) {
         try {
-            const imageRefToDelete = ref(storage, imageUrl); // Tenta derivar o caminho da URL completa
+            const imageRefToDelete = ref(storage, imageUrl); // Create ref from full URL
             await deleteObject(imageRefToDelete);
             console.warn("Firebase ProductService: Image deleted from Storage using direct imageUrl (doc didn't exist):", imageUrl);
         } catch (storageError: any) {
+            // It's okay if object-not-found, means it might have been deleted already or path was wrong
             if (storageError.code !== 'storage/object-not-found') {
                 console.warn(`Firebase ProductService: Failed to delete image from Storage at ${imageUrl} (doc didn't exist). Error: ${storageError.message}`);
             } else {
-                console.warn("Firebase ProductService: Image not found at direct imageUrl (doc didn't exist, this is okay):", imageUrl);
+                console.log("Firebase ProductService: Image not found at direct imageUrl (doc didn't exist, this is okay):", imageUrl);
             }
         }
       }
-      return true; // Considerar sucesso se o documento já não existia.
+      return true; // Document didn't exist, so considered 'successfully' deleted from Firestore perspective
     }
 
     const productData = productDocSnap.data();
-    // Priorizar storagePath se existir, senão tentar derivar da imageUrl.
+    // Prefer storagePath if available, otherwise try to derive from imageUrl
     const storagePathToDelete = productData?.storagePath || (imageUrl && imageUrl.startsWith('https://firebasestorage.googleapis.com') ? ref(storage, imageUrl).fullPath : null);
 
     await deleteDoc(productDocRef);
@@ -154,14 +152,14 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl?: st
 
     if (storagePathToDelete) {
       try {
-        const imageRef = ref(storage, storagePathToDelete); 
+        const imageRef = ref(storage, storagePathToDelete); // Create ref from path
         await deleteObject(imageRef);
         console.warn("Firebase ProductService: Image deleted from Storage using path:", storagePathToDelete);
       } catch (storageError: any) {
-        if (storageError.code !== 'storage/object-not-found') {
+        if (storageError.code !== 'storage/object-not-found') { // Don't error if already deleted
            console.warn(`Firebase ProductService: Failed to delete image from Storage at ${storagePathToDelete}. Error: ${storageError.message}`);
         } else {
-           console.warn("Firebase ProductService: Image not found at path for deletion (this might be okay if already deleted or path was wrong):", storagePathToDelete);
+           console.log("Firebase ProductService: Image not found at path for deletion (this might be okay if already deleted or path was wrong):", storagePathToDelete);
         }
       }
     } else {
