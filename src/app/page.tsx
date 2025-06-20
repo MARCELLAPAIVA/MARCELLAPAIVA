@@ -1,11 +1,20 @@
 
+"use client"; // Adicionado para garantir que os logs do cliente funcionem aqui se necessário
+
 import ProductGallery from '@/components/products/ProductGallery';
 import HeroCarousel from '@/components/common/HeroCarousel';
 import WelcomeAuthSection from '@/components/common/WelcomeAuthSection';
 import SortDropdown from '@/components/common/SortDropdown';
-import CategoryFilterDropdown from '@/components/common/CategoryFilterDropdown'; // Importar
+import CategoryFilterDropdown from '@/components/common/CategoryFilterDropdown';
+import { useEffect } from 'react';
 
 export default function HomePage() {
+  useEffect(() => {
+    console.warn("HomePage: Component Mounted and Rendering.");
+  }, []);
+
+  console.warn("HomePage: Function body executing.");
+
   return (
     <div className="space-y-8">
       <HeroCarousel />

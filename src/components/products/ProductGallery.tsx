@@ -8,14 +8,14 @@ import { AlertTriangle, SearchX } from 'lucide-react';
 
 export default function ProductGallery() {
   console.warn("ProductGallery: Component rendering/re-rendering.");
-  const { products: displayedProducts, isHydrated, selectedCategory, searchTerm, rawProducts, isLoading } = useProducts();
+  const { products: displayedProducts, isHydrated, isLoading, rawProducts, selectedCategory, searchTerm } = useProducts();
 
   console.warn("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
   console.warn("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
   console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length);
   console.warn("ProductGallery: State from useProducts - selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
 
-  if (!isHydrated || isLoading) { // Ensure skeleton shows until fully hydrated and not loading
+  if (!isHydrated || isLoading) { 
     console.warn("ProductGallery: Showing SKELETON loading state. !isHydrated:", !isHydrated, "isLoading:", isLoading);
     return (
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -47,7 +47,7 @@ export default function ProductGallery() {
       );
     }
     if (selectedCategory && rawProducts.length > 0) {
-      console.error("ProductGallery: No products in selected category:", selectedCategory, "but rawProducts exist.");
+      console.error("ProductGallery: No products in selected category:", selectedCategory, "but rawProducts exist:", rawProducts.length);
       return (
         <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
           <AlertTriangle size={48} className="text-primary mb-4" />
@@ -60,7 +60,7 @@ export default function ProductGallery() {
         </div>
       );
     }
-    // This condition should ideally only be met if there are genuinely no products after loading.
+    
     if (rawProducts.length === 0 && !isLoading) { 
       console.error("ProductGallery: No products registered AT ALL and not loading.");
       return (
@@ -75,8 +75,7 @@ export default function ProductGallery() {
         </div>
       );
     }
-    // Fallback if displayedProducts is empty but none of the specific conditions above were met.
-    // This might indicate an issue with filtering or an unexpected state.
+    
     console.error("ProductGallery: displayedProducts is empty, but conditions for specific 'no products' messages not met. rawProducts count:", rawProducts.length, "isLoading:", isLoading);
     return (
          <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -95,10 +94,11 @@ export default function ProductGallery() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {displayedProducts.map((product, index) => {
-        if (!product || !product.id) {
-          console.error(`ProductGallery: CRITICAL - Invalid product object at index ${index} in map:`, product);
+        // Adicionando uma verificação extra aqui
+        if (!product || typeof product.id !== 'string') {
+          console.error(`ProductGallery: CRITICAL - Invalid product object or missing/invalid ID at index ${index} during map:`, product);
           return (
-            <div key={`error-${index}`} className="p-2 border border-destructive bg-destructive/10 text-destructive-foreground text-xs">
+            <div key={`error-${index}-${Math.random()}`} className="p-2 border border-destructive bg-destructive/10 text-destructive-foreground text-xs">
               Erro: Produto inválido no índice {index}. Verifique o console.
             </div>
           );

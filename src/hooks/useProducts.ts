@@ -11,6 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export function useProducts() {
+  console.warn("useProducts: Hook initializing / re-running.");
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
@@ -18,17 +19,19 @@ export function useProducts() {
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const { toast } = useToast();
 
-  console.warn("useProducts: Hook initialized. Initial isLoading:", isLoading);
-
   const fetchProducts = useCallback(async () => {
     console.warn("useProducts: fetchProducts CALLED.");
     setIsLoading(true);
-    console.warn("useProducts: fetchProducts - isLoading SET TO TRUE.");
     try {
       const firebaseProducts = await getProductsFromFirebase();
       console.warn("useProducts: fetchProducts - firebaseProducts RECEIVED:", firebaseProducts);
       if (Array.isArray(firebaseProducts)) {
-        setRawProducts(firebaseProducts);
+        // Validação básica de cada produto
+        const validProducts = firebaseProducts.filter(p => p && p.id && typeof p.description === 'string');
+        if (validProducts.length !== firebaseProducts.length) {
+          console.error("useProducts: fetchProducts - Some products from Firebase were invalid. Original count:", firebaseProducts.length, "Valid count:", validProducts.length);
+        }
+        setRawProducts(validProducts);
       } else {
         console.error("useProducts: fetchProducts - getProductsFromFirebase did not return an array. Received:", firebaseProducts);
         setRawProducts([]);
@@ -37,13 +40,13 @@ export function useProducts() {
       console.error("useProducts: fetchProducts - FAILED to load products from Firebase:", error);
       toast({
         title: "Erro ao Carregar Produtos",
-        description: "Não foi possível buscar os produtos do servidor. Tente novamente mais tarde.",
+        description: "Não foi possível buscar os produtos do servidor.",
         variant: "destructive",
       });
       setRawProducts([]);
     } finally {
       setIsLoading(false);
-      console.warn("useProducts: fetchProducts - FINISHED. isLoading SET TO FALSE.");
+      console.warn("useProducts: fetchProducts - FINISHED. isLoading is now FALSE.");
     }
   }, [toast]);
 
@@ -70,7 +73,7 @@ export function useProducts() {
       console.error("useProducts: addProduct - FAILED to add product:", error);
       toast({
         title: "Erro ao Adicionar Produto",
-        description: "Não foi possível salvar o produto. Verifique sua conexão ou tente mais tarde.",
+        description: "Não foi possível salvar o produto.",
         variant: "destructive",
       });
     } finally {
@@ -94,7 +97,7 @@ export function useProducts() {
       await fetchProducts();
       toast({
         title: "Erro ao Remover Produto",
-        description: "Não foi possível remover o produto. Tente novamente.",
+        description: "Não foi possível remover o produto.",
         variant: "destructive",
       });
     } finally {
@@ -103,7 +106,7 @@ export function useProducts() {
   }, [toast, fetchProducts]);
 
   const products = useMemo(() => {
-    console.warn("useProducts: useMemo for 'products' recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
+    console.warn("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
     let tempProducts = [...rawProducts];
 
     if (selectedCategory) {
@@ -118,12 +121,12 @@ export function useProducts() {
         return descriptionMatch || categoryMatch;
       });
     }
-    console.warn("useProducts: useMemo for 'products' done. tempProducts count:", tempProducts.length);
+    console.warn("useProducts: useMemo for 'products' done. Filtered products count:", tempProducts.length);
     return tempProducts;
   }, [rawProducts, selectedCategory, searchTerm]);
 
-  const isHydrated = !isLoading;
-  console.warn("useProducts: hook returning. isHydrated:", isHydrated, "isLoading:", isLoading, "products (filtered) count:", products.length, "rawProducts count:", rawProducts.length);
+  const isHydrated = !isLoading; 
+  console.warn("useProducts: hook returning. Values - isLoading:", isLoading, "isHydrated:", isHydrated, "filtered products count:", products.length, "rawProducts count:", rawProducts.length);
 
   return {
     products,

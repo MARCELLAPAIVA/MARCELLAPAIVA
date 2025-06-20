@@ -18,8 +18,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Log MUITO importante no início do componente
   console.warn(`ProductCard: Component rendering. Product received:`, product);
 
-  if (!product || !product.id) {
-    console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing an id. Cannot render card. Product was:", product);
+  if (!product || !product.id || typeof product.id !== 'string') { // Adicionada verificação de tipo para product.id
+    console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Cannot render card. Product was:", product);
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
         <p>Erro: Dados do produto inválidos no ProductCard.</p>
@@ -34,9 +34,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const safeDescription = product.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
   
-  // Apenas para ter certeza que imageUrl está presente e logá-la
   const imageUrlForDisplay = product.imageUrl || "URL DA IMAGEM INDISPONÍVEL";
-  console.log(`ProductCard: Processing product ID: ${product.id}, Name: '${productName}'. Image URL from prop: '${product.imageUrl}'`);
+  // Log mais detalhado
+  console.log(`ProductCard: Processing product ID: ${product.id}, Name: '${productName}'. Image URL from prop: '${product.imageUrl}'. Full product object:`, product);
   
   const handleAddToCart = () => {
     addToCart(product);
@@ -49,6 +49,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <p className="text-xs text-muted-foreground text-center break-all">
           ID: {product.id} <br />
           Image URL (do objeto product): {imageUrlForDisplay} <br/>
+          Descrição: {productName} <br/>
           (Preview da imagem desabilitado para teste de dados)
         </p>
       </div>
