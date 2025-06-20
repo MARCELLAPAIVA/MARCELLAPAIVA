@@ -23,7 +23,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const altText = product.imageName || product.description?.substring(0,50) || "Imagem do produto";
 
   // Log crucial para depuração
-  console.log(`ProductCard: Rendering product '${productName}', Image URL: '${product.imageUrl}'`);
+  console.log(`ProductCard: Rendering product '${productName}'. Product object:`, product);
+  console.log(`ProductCard: Image URL being used for <Image> src: '${product.imageUrl}'`);
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -41,7 +42,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="object-cover"
             data-ai-hint="product tobacco"
             onError={(e) => {
-              console.error(`ProductCard: Error loading image for product ${product.id} (${productName}). URL: ${product.imageUrl}`, e.currentTarget.src, e.currentTarget.currentSrc);
+              const target = e.target as HTMLImageElement;
+              console.error(`ProductCard: Error loading image for product ${product.id} ('${productName}'). Attempted URL: '${product.imageUrl}'. Current src attribute: '${target.currentSrc}'. Natural width: ${target.naturalWidth}`);
             }}
             onLoad={() => {
               // console.log(`ProductCard: Successfully loaded image for product ${product.id} (${productName}). URL: ${product.imageUrl}`);
