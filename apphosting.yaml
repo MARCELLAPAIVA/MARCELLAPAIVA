@@ -18,5 +18,10 @@ runConfig:
 # The build command (npm run build) is typically inferred correctly for Next.js 
 # by App Hosting buildpacks when package.json is found.
 # If issues persist, you might need to add a buildConfig section:
-# build:
-#   run: npm run build
+# buildConfig:
+#  buildCommand: npm run build
+#  enforced: true # Ensure this build command is used.
+# If your app's package.json is not at the root of your repository,
+# specify the sourceDirectory. For example, if it's in an 'app' folder:
+# sourceDirectory: app/
+
