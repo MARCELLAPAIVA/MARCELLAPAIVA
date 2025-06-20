@@ -9,19 +9,17 @@ runtime: nodejs18
 # This should match the "start" script in your package.json.
 entrypoint: npm run start
 
+buildConfig:
+  buildCommand: npm run build
+
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   # Adjust based on expected load.
   maxInstances: 2
 
-# The build command (npm run build) is typically inferred correctly for Next.js 
+# The build command (npm run build) is typically inferred correctly for Next.js
 # by App Hosting buildpacks when package.json is found.
-# If issues persist, you might need to add a buildConfig section:
-# buildConfig:
-#  buildCommand: npm run build
-#  enforced: true # Ensure this build command is used.
+# If issues persist, you might need to add a buildConfig section like the one above.
 # If your app's package.json is not at the root of your repository,
-# specify the sourceDirectory. For example, if it's in an 'app' folder:
-# sourceDirectory: app/
-
+# you would specify the sourceDirectory in the Firebase Console UI (which you've correctly set to / ).
