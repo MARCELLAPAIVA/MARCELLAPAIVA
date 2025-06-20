@@ -115,7 +115,8 @@ export function useProducts() {
   }, [toast]);
 
   const products = useMemo(() => {
-    console.error("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
+    // Changed console.error to console.log for this specific debug message
+    console.log("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
     let tempProducts = [...rawProducts];
 
     if (selectedCategory) {
