@@ -15,20 +15,33 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Log inicial para confirmar que o componente está sendo chamado e com qual produto
+  console.log(`ProductCard: Component rendering. Product ID: ${product?.id}`);
+  console.log("ProductCard: Full product object:", product);
+
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
-  const safeDescription = product.description || "Nome do produto indisponível";
+  // Verificações para garantir que product e product.description existem antes de usá-los
+  const safeDescription = product?.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const altText = product.imageName || product.description?.substring(0,50) || "Imagem do produto";
+  const altText = product?.imageName || product?.description?.substring(0,50) || "Imagem do produto";
 
-  // Log crucial para depuração
-  console.log(`ProductCard: Rendering product '${productName}'. Product object:`, product);
-  console.log(`ProductCard: Image URL being used for <Image> src: '${product.imageUrl}'`);
-
+  // Log crucial para depuração da URL da imagem
+  console.log(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product?.imageUrl}'. Alt text: '${altText}'`);
+  
   const handleAddToCart = () => {
-    addToCart(product);
+    if(product) { // Garante que product não é null/undefined
+      addToCart(product);
+    } else {
+      console.error("ProductCard: addToCart called with null/undefined product.");
+    }
   };
+
+  if (!product) {
+    console.error("ProductCard: product prop is null or undefined. Cannot render card.");
+    return null; // Ou algum fallback visual
+  }
 
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
@@ -43,7 +56,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             data-ai-hint="product tobacco"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              console.error(`ProductCard: Error loading image for product ${product.id} ('${productName}'). Attempted URL: '${product.imageUrl}'. Current src attribute: '${target.currentSrc}'. Natural width: ${target.naturalWidth}`);
+              console.error(`ProductCard: Error loading image for product ${product.id} ('${productName}'). Attempted URL: '${product.imageUrl}'. Current src attribute: '${target.currentSrc}'. Natural width: ${target.naturalWidth}`, e);
             }}
             onLoad={() => {
               // console.log(`ProductCard: Successfully loaded image for product ${product.id} (${productName}). URL: ${product.imageUrl}`);
@@ -90,6 +103,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm" 
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
+            disabled={!product} // Desabilita se product for nulo
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento
