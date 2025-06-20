@@ -12,10 +12,11 @@ export default function ProductGallery() {
 
   console.warn("ProductGallery: State from useProducts - isLoading:", isLoading, "isHydrated:", isHydrated);
   console.warn("ProductGallery: State from useProducts - rawProducts count:", rawProducts.length);
-  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length);
+  console.warn("ProductGallery: State from useProducts - displayedProducts count:", displayedProducts.length, "Content:", JSON.stringify(displayedProducts.map(p => ({id: p.id, imageUrl: p.imageUrl}))));
   console.warn("ProductGallery: State from useProducts - selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
 
-  if (!isHydrated || isLoading) { 
+
+  if (!isHydrated || isLoading) {
     console.warn("ProductGallery: Showing SKELETON loading state. !isHydrated:", !isHydrated, "isLoading:", isLoading);
     return (
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -60,8 +61,8 @@ export default function ProductGallery() {
         </div>
       );
     }
-    
-    if (rawProducts.length === 0 && !isLoading) { 
+
+    if (rawProducts.length === 0 && !isLoading) {
       console.error("ProductGallery: No products registered AT ALL and not loading.");
       return (
         <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -75,7 +76,7 @@ export default function ProductGallery() {
         </div>
       );
     }
-    
+
     console.error("ProductGallery: displayedProducts is empty, but conditions for specific 'no products' messages not met. rawProducts count:", rawProducts.length, "isLoading:", isLoading);
     return (
          <div className="flex flex-col items-center justify-center text-center py-12 bg-card rounded-lg shadow-md border border-border">
@@ -94,7 +95,6 @@ export default function ProductGallery() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {displayedProducts.map((product, index) => {
-        // Adicionando uma verificação extra aqui
         if (!product || typeof product.id !== 'string') {
           console.error(`ProductGallery: CRITICAL - Invalid product object or missing/invalid ID at index ${index} during map:`, product);
           return (

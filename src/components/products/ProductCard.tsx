@@ -15,9 +15,8 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // CRITICAL LOG: This should appear for every card.
   console.warn(`ProductCard: Component rendering. Product ID: ${product?.id}`);
-  
+
   if (!product || !product.id || typeof product.id !== 'string') {
     console.error("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Cannot render card. Product was:", product);
     return (
@@ -27,55 +26,54 @@ export default function ProductCard({ product }: ProductCardProps) {
       </Card>
     );
   }
-  
-  // CRITICAL LOG: See the full product object.
-  // Using JSON.parse(JSON.stringify(product)) for a clean loggable object, especially if product might have non-serializable parts (like Date objects if not converted)
+
   try {
     console.warn(`ProductCard: Full product object for ID ${product.id}:`, JSON.parse(JSON.stringify(product)));
   } catch (e) {
     console.warn(`ProductCard: Full product object for ID ${product.id} (raw, stringify failed):`, product);
   }
 
-
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
 
   const safeDescription = product.description || "Nome do produto indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
+  // Usar product.imageName para o alt text se existir, senão a descrição.
+  // product.imageName contém o nome original do arquivo que o usuário enviou.
   const altText = product.imageName || safeDescription.substring(0, 50) || "Imagem do produto";
 
-  // CRITICAL LOG: The URL being attempted.
   console.warn(`ProductCard: Processing product '${productName}'. Attempted Image URL: '${product.imageUrl}'. Alt text: '${altText}'`);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error(`ProductCard: Error loading image for product ${product.id}. URL: ${product.imageUrl}`, e.target);
-    // Para depuração, podemos tentar forçar o elemento a mostrar o src problemático
     if (e.target instanceof HTMLImageElement) {
         console.error(`ProductCard: Failing image element src was: ${e.target.currentSrc || e.target.src}`);
     }
   };
-  
+
   const handleAddToCart = () => {
     addToCart(product);
   };
 
+  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://');
+
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center">
-        {product.imageUrl && typeof product.imageUrl === 'string' && product.imageUrl.startsWith('https://') ? (
+        {isValidImageUrl ? (
           <Image
-            src={product.imageUrl}
+            src={product.imageUrl} // Esta deve ser a URL de download completa do Firebase Storage
             alt={altText}
             fill
             className="object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" // Ajuste conforme seu layout
-            priority={false} // Definir como true apenas para imagens LCP (Largest Contentful Paint)
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            priority={false}
             onError={handleImageError}
             data-ai-hint="product tobacco accessory"
           />
         ) : (
           <div className="flex items-center justify-center h-full w-full text-muted-foreground text-sm p-2 text-center">
-            {product.imageUrl ? `URL da imagem inválida: ${product.imageUrl.substring(0,50)}...` : "Sem imagem"}
+            {product.imageUrl ? `URL da imagem inválida ou ausente: ${String(product.imageUrl).substring(0,50)}...` : "Sem imagem"}
           </div>
         )}
       </div>
@@ -105,12 +103,12 @@ export default function ProductCard({ product }: ProductCardProps) {
       </CardContent>
       {isCartVisibleToUser && (
         <CardFooter className="p-3 border-t border-border/20">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!product.imageUrl || !product.imageUrl.startsWith('https://')} // Desabilitar se a URL for inválida
+            disabled={!isValidImageUrl}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento

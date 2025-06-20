@@ -26,11 +26,17 @@ export function useProducts() {
       const firebaseProducts = await getProductsFromFirebase();
       console.warn("useProducts: fetchProducts - firebaseProducts RECEIVED:", firebaseProducts);
       if (Array.isArray(firebaseProducts)) {
-        // Validação básica de cada produto
-        const validProducts = firebaseProducts.filter(p => p && p.id && typeof p.description === 'string');
-        if (validProducts.length !== firebaseProducts.length) {
-          console.error("useProducts: fetchProducts - Some products from Firebase were invalid. Original count:", firebaseProducts.length, "Valid count:", validProducts.length);
-        }
+        const validProducts = firebaseProducts.filter(p => {
+          if (!p || !p.id || typeof p.description !== 'string') {
+            console.error("useProducts: fetchProducts - Invalid product object found and filtered out:", p);
+            return false;
+          }
+          if (typeof p.imageUrl !== 'string' || !p.imageUrl.startsWith('https://')) {
+            console.warn(`useProducts: fetchProducts - Product ID ${p.id} has invalid or missing imageUrl:`, p.imageUrl);
+            // Considerar se deve filtrar ou não. Por agora, vamos manter, mas logar.
+          }
+          return true;
+        });
         setRawProducts(validProducts);
       } else {
         console.error("useProducts: fetchProducts - getProductsFromFirebase did not return an array. Received:", firebaseProducts);
@@ -62,13 +68,18 @@ export function useProducts() {
     console.warn("useProducts: addProduct CALLED for:", productData.description);
     setIsMutating(true);
     try {
-      await addProductToFirebase(productData, imageFile);
-      await fetchProducts(); 
-      toast({
-        title: "Sucesso!",
-        description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
-        variant: "default",
-      });
+      const newProduct = await addProductToFirebase(productData, imageFile);
+      if (newProduct) {
+        // fetchProducts(); // Opcional: productService pode já retornar o produto com ID para adição local
+        setRawProducts(prev => [newProduct, ...prev]); // Adiciona localmente para feedback mais rápido
+         toast({
+          title: "Sucesso!",
+          description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
+          variant: "default",
+        });
+      } else {
+        throw new Error("addProductToFirebase returned null");
+      }
     } catch (error) {
       console.error("useProducts: addProduct - FAILED to add product:", error);
       toast({
@@ -79,7 +90,7 @@ export function useProducts() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast, fetchProducts]);
+  }, [toast]); // fetchProducts removido das dependências se addProductToFirebase retornar o produto
 
   const removeProduct = useCallback(async (id: string, imageUrl: string, productName?: string) => {
     console.warn("useProducts: removeProduct CALLED for ID:", id);
@@ -94,7 +105,7 @@ export function useProducts() {
       });
     } catch (error) {
       console.error("useProducts: removeProduct - FAILED to remove product:", error);
-      await fetchProducts();
+      // fetchProducts(); // Refetch em caso de falha para garantir consistência
       toast({
         title: "Erro ao Remover Produto",
         description: "Não foi possível remover o produto.",
@@ -103,7 +114,7 @@ export function useProducts() {
     } finally {
       setIsMutating(false);
     }
-  }, [toast, fetchProducts]);
+  }, [toast]); // fetchProducts removido, pois a remoção local é suficiente para o otimismo
 
   const products = useMemo(() => {
     console.warn("useProducts: useMemo for 'products' (filtered list) recalculating. rawProducts count:", rawProducts.length, "selectedCategory:", selectedCategory, "searchTerm:", searchTerm);
@@ -125,7 +136,7 @@ export function useProducts() {
     return tempProducts;
   }, [rawProducts, selectedCategory, searchTerm]);
 
-  const isHydrated = !isLoading; 
+  const isHydrated = !isLoading;
   console.warn("useProducts: hook returning. Values - isLoading:", isLoading, "isHydrated:", isHydrated, "filtered products count:", products.length, "rawProducts count:", rawProducts.length);
 
   return {
