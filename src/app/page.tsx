@@ -1,37 +1,22 @@
 
-"use client"; // Adicionado para garantir que os logs do cliente funcionem aqui se necessário
+"use client"; // ESSENCIAL para hooks como useEffect e logs no navegador
 
-import ProductGallery from '@/components/products/ProductGallery';
-import HeroCarousel from '@/components/common/HeroCarousel';
-import WelcomeAuthSection from '@/components/common/WelcomeAuthSection';
-import SortDropdown from '@/components/common/SortDropdown';
-import CategoryFilterDropdown from '@/components/common/CategoryFilterDropdown';
 import { useEffect } from 'react';
 
 export default function HomePage() {
   useEffect(() => {
-    console.warn("HomePage: Component Mounted and Rendering.");
-  }, []);
+    // Este log DEVE aparecer no console do NAVEGADOR se a página estiver sendo renderizada no cliente.
+    console.warn("HomePage (Ultra Simples): useEffect EXECUTADO! Componente montado no cliente.");
+  }, []); // Array de dependência vazio para executar apenas uma vez na montagem
 
-  console.warn("HomePage: Function body executing.");
+  // Este log DEVE aparecer se o corpo da função do componente for executado.
+  console.warn("HomePage (Ultra Simples): Corpo da função EXECUTADO!");
 
   return (
-    <div className="space-y-8">
-      <HeroCarousel />
-      <WelcomeAuthSection />
-
-      <section className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h2 className="text-3xl font-headline font-bold text-foreground text-center md:text-left whitespace-nowrap">
-            Nossos Produtos
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <CategoryFilterDropdown />
-            <SortDropdown />
-          </div>
-        </div>
-        <ProductGallery />
-      </section>
+    <div style={{ padding: '20px', border: '2px solid red', minHeight: '300px' }}>
+      <h1 style={{ fontSize: '24px', color: 'red' }}>Página de Teste Ultra Simples</h1>
+      <p>Se você vê esta mensagem e o console.warn acima no console do NAVEGADOR, a página raiz está funcionando no cliente.</p>
+      <p>Verifique o console do NAVEGADOR.</p>
     </div>
   );
 }
