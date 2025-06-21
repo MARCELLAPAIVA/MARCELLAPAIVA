@@ -14,8 +14,8 @@ const getImageNameForStorage = (originalFileName: string, productId: string) => 
   
   const safeOriginalFileNameBase = baseName
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[^a-zA-Z0-9_.-]/g, '_') // Replace unsafe characters with _
     .replace(/\s+/g, '_') // Replace spaces with underscores
-    .replace(/[^a-zA-Z0-9_.-]/g, '_') // Replace other unsafe characters with _ (allows ., -)
     .replace(/_{2,}/g, '_') // Replace multiple underscores with a single one
     .substring(0, 50); // Truncate for safety/consistency
 
@@ -82,7 +82,7 @@ export const getProductsFromFirebase = async (): Promise<Product[]> => {
       console.error("Firebase ProductService: Firestore 'db' is not properly initialized in getProductsFromFirebase. Returning empty product list.");
       return [];
   }
-  console.log("useProducts: getProductsFromFirebase - Attempting to fetch products.");
+  console.warn("useProducts: getProductsFromFirebase - Attempting to fetch products.");
   try {
     const productsQuery = query(collection(db, PRODUCTS_COLLECTION), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(productsQuery);
@@ -108,7 +108,7 @@ export const getProductsFromFirebase = async (): Promise<Product[]> => {
       }
       return productItem;
     });
-    console.log("useProducts: getProductsFromFirebase - All products fetched. Count:", products.length);
+    console.warn("useProducts: getProductsFromFirebase - All products fetched. Count:", products.length);
     return products;
   } catch (error) {
     console.error("Firebase ProductService: Error getting products from Firebase: ", error);
@@ -161,7 +161,7 @@ export const deleteProductFromFirebase = async (productId: string, imageUrl?: st
         if (storageError.code !== 'storage/object-not-found') { 
            console.warn(`Firebase ProductService: Failed to delete image from Storage at ${storagePathToDelete}. Error: ${storageError.message}`);
         } else {
-           console.log("Firebase ProductService: Image not found at path for deletion (this might be okay if already deleted or path was wrong):", storagePathToDelete);
+           console.warn("Firebase ProductService: Image not found at path for deletion (this might be okay if already deleted or path was wrong):", storagePathToDelete);
         }
       }
     } else {
