@@ -20,27 +20,21 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart, isCartVisibleToUser } = useCart();
 
   useEffect(() => {
-    // console.log(`ProductCard (useEffect for product ${product?.id}): Full product object:`, JSON.parse(JSON.stringify(product || {})));
-    // console.log(`ProductCard (useEffect for product ${product?.id}): Attempted Image URL: '${product?.imageUrl}'`);
     setImageError(false); // Reset image error state if product changes
   }, [product]);
 
   if (!product || typeof product.id !== 'string') {
-    console.warn("ProductCard: CRITICAL - product prop is null, undefined, or missing/invalid id. Product was:", JSON.parse(JSON.stringify(product || {})));
     return (
       <Card className="bg-destructive border-destructive text-destructive-foreground p-4">
         <p className="font-bold">Erro nos Dados do Produto!</p>
         <p className="text-xs">ID do produto ausente ou inválido.</p>
-        <pre className="mt-2 text-xs whitespace-pre-wrap bg-black/20 p-1 rounded">
-          {product ? JSON.stringify(product, null, 2) : "Produto Nulo/Indefinido"}
-        </pre>
       </Card>
     );
   }
   
   const safeDescription = product.description || "Descrição Indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && (product.imageUrl.startsWith('https://firebasestorage.googleapis.com') || product.imageUrl.startsWith('http://localhost')); // Allow localhost for local testing
+  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && (product.imageUrl.startsWith('https://') || product.imageUrl.startsWith('http://'));
   const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
 
   const handleAddToCart = () => {
@@ -57,9 +51,8 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
         {imageError ? (
           <div className="text-xs text-muted-foreground p-2">
-            <p className="text-destructive">Erro ao carregar imagem.</p>
-            {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida ou ausente.</p>}
-            <p className="truncate mt-1" title={product.imageUrl || "URL não disponível"}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
+            <p className="text-destructive font-semibold">Imagem indisponível.</p>
+            <p className="truncate mt-1 text-destructive/70" title={product.imageUrl || "URL não disponível"}>Falha ao carregar a URL</p>
           </div>
         ) : isValidImageUrl ? (
           <img
@@ -72,9 +65,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         ) : (
           <div className="text-xs text-muted-foreground p-2">
-            <p>Imagem indisponível.</p>
-            {!isValidImageUrl && <p className="text-destructive/70 mt-1">URL da imagem parece inválida ou ausente.</p>}
-             <p className="truncate mt-1" title={product.imageUrl || "URL não disponível"}>Debug URL: {product.imageUrl ? product.imageUrl.substring(0,30) + "..." : "N/A"}</p>
+            <p>Sem imagem cadastrada.</p>
           </div>
         )}
       </div>
@@ -109,7 +100,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl || imageError} // Disable if no valid image or if it errored
+            disabled={!isValidImageUrl || imageError}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento
