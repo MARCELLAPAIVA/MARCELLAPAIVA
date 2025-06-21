@@ -6,6 +6,7 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer'; // Importar o Footer
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext'; // Importar CartProvider
+import { ProductsProvider } from '@/contexts/ProductsContext'; // Importar ProductsProvider
 import WhatsAppButton from '@/components/common/WhatsAppButton';
 
 export const metadata: Metadata = {
@@ -27,14 +28,16 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen flex flex-col">
         <AuthProvider>
-          <CartProvider> {/* Envolver com CartProvider */}
-            <Header />
-            <main className="flex-grow container mx-auto px-4 py-8 pb-8">
-              {children}
-            </main>
-            <Footer />
-            <WhatsAppButton />
-            <Toaster />
+          <CartProvider>
+            <ProductsProvider>
+              <Header />
+              <main className="flex-grow container mx-auto px-4 py-8 pb-8">
+                {children}
+              </main>
+              <Footer />
+              <WhatsAppButton />
+              <Toaster />
+            </ProductsProvider>
           </CartProvider>
         </AuthProvider>
       </body>
