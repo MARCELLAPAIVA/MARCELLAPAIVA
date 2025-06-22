@@ -1,34 +1,27 @@
-
 "use client";
 
 import { useProducts } from '@/hooks/useProducts';
 import ProductCard from './ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, SearchX } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 export default function ProductGallery() {
   const { rawProducts, isHydrated, isLoading, selectedCategory, searchTerm } = useProducts();
 
-  const displayedProducts = useMemo(() => {
-    console.log(`ProductGallery: Filtering logic running. Category: '${selectedCategory}', Search: '${searchTerm}'`);
-    
-    let tempProducts = [...rawProducts];
-
-    if (selectedCategory) {
-      tempProducts = tempProducts.filter(product => product.category === selectedCategory);
-    }
-
-    if (searchTerm && searchTerm.trim() !== '') {
-      const lowercasedSearchTerm = searchTerm.toLowerCase();
-      tempProducts = tempProducts.filter(product => {
-        const descriptionMatch = product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(lowercasedSearchTerm);
-        const categoryMatch = product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(lowercasedSearchTerm);
-        return descriptionMatch || categoryMatch;
-      });
-    }
-    return tempProducts;
-  }, [rawProducts, selectedCategory, searchTerm]);
+  // Perform filtering directly in the render body to avoid potential production build issues with useMemo
+  let displayedProducts = [...rawProducts];
+  if (selectedCategory) {
+    displayedProducts = displayedProducts.filter(product => product.category === selectedCategory);
+  }
+  if (searchTerm && searchTerm.trim() !== '') {
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    displayedProducts = displayedProducts.filter(product => {
+      const descriptionMatch = product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(lowercasedSearchTerm);
+      const categoryMatch = product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(lowercasedSearchTerm);
+      return descriptionMatch || categoryMatch;
+    });
+  }
 
   useEffect(() => {
     // DIAGNOSTIC LOG
