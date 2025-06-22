@@ -28,6 +28,7 @@ export default function Header() {
 
   const [isSearchInputVisible, setIsSearchInputVisible] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // Controlar o estado do menu
 
   const totalCartItems = getTotalItems();
 
@@ -53,7 +54,7 @@ export default function Header() {
 
   const handleCategorySelect = (category: string | null) => {
     setSelectedCategory(category);
-    // Não é necessário fechar o sheet aqui explicitamente se os itens já usam SheetClose
+    setIsSheetOpen(false); // Fechar o menu após a seleção
   };
 
 
@@ -63,7 +64,7 @@ export default function Header() {
         {!isSearchInputVisible ? (
           <>
             <div className="flex items-center space-x-3">
-              <Sheet>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="text-white hover:bg-gray-700 h-8 w-8 sm:h-9 sm:w-9">
                     <Menu size={20} />
@@ -85,41 +86,36 @@ export default function Header() {
                   <ScrollArea className="flex-grow">
                     <ul className="space-y-1 p-4">
                       <li>
-                        <SheetClose asChild>
-                          <button
-                            onClick={() => handleCategorySelect(null)}
-                            className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body flex items-center text-foreground hover:bg-muted/50 ${!selectedCategory ? 'bg-primary/10 text-primary font-semibold' : ''}`}
-                          >
-                            <ListFilter size={18} className="mr-2 opacity-70" />
-                            Todas as Categorias
-                          </button>
-                        </SheetClose>
+                        <button
+                          onClick={() => handleCategorySelect(null)}
+                          className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body flex items-center text-foreground hover:bg-muted/50 ${!selectedCategory ? 'bg-primary/10 text-primary font-semibold' : ''}`}
+                        >
+                          <ListFilter size={18} className="mr-2 opacity-70" />
+                          Todas as Categorias
+                        </button>
                       </li>
                       {categories.map((category) => (
                         <li key={category}>
-                          <SheetClose asChild>
-                            <button
-                              onClick={() => handleCategorySelect(category)}
-                              className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body text-foreground hover:bg-muted/50 ${selectedCategory === category ? 'bg-primary/10 text-primary font-semibold' : ''}`}
-                            >
-                              {category}
-                            </button>
-                          </SheetClose>
+                          <button
+                            onClick={() => handleCategorySelect(category)}
+                            className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body text-foreground hover:bg-muted/50 ${selectedCategory === category ? 'bg-primary/10 text-primary font-semibold' : ''}`}
+                          >
+                            {category}
+                          </button>
                         </li>
                       ))}
                     </ul>
                   </ScrollArea>
                   <Separator className="my-2 bg-border" />
                   <div className="p-4 border-t border-border">
-                    <SheetClose asChild>
-                      <Link
-                        href="/login"
-                        className="flex items-center w-full text-left py-3 px-3 text-foreground hover:bg-muted/50 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body"
-                      >
-                        <ShieldCheck size={18} className="mr-2 text-primary" />
-                        Acesso Admin / Conta
-                      </Link>
-                    </SheetClose>
+                    <Link
+                      href="/login"
+                      onClick={() => setIsSheetOpen(false)}
+                      className="flex items-center w-full text-left py-3 px-3 text-foreground hover:bg-muted/50 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body"
+                    >
+                      <ShieldCheck size={18} className="mr-2 text-primary" />
+                      Acesso Admin / Conta
+                    </Link>
                   </div>
                 </SheetContent>
               </Sheet>
