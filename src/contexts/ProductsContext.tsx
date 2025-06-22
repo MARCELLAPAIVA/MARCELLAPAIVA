@@ -1,7 +1,8 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/lib/types';
 import {
   addProductToFirebase,
@@ -12,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 
 // Define the shape of the context state
 interface ProductsContextType {
-  products: Product[];
   rawProducts: Product[];
   addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl' | 'imageName'>, imageFile: File) => Promise<void>;
   removeProduct: (id: string, imageUrl: string, productName?: string) => Promise<void>;
@@ -128,31 +128,9 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast]);
 
-  const products = useMemo(() => {
-    // DIAGNOSTIC LOG
-    console.log(`ProductsContext: Filtering products. Category: '${selectedCategory}', Search: '${searchTerm}'`);
-    
-    let tempProducts = [...rawProducts];
-
-    if (selectedCategory) {
-      tempProducts = tempProducts.filter(product => product.category === selectedCategory);
-    }
-
-    if (searchTerm && searchTerm.trim() !== '') {
-      const lowercasedSearchTerm = searchTerm.toLowerCase();
-      tempProducts = tempProducts.filter(product => {
-        const descriptionMatch = product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(lowercasedSearchTerm);
-        const categoryMatch = product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(lowercasedSearchTerm);
-        return descriptionMatch || categoryMatch;
-      });
-    }
-    return tempProducts;
-  }, [rawProducts, selectedCategory, searchTerm]);
-
   const isHydrated = !isLoading;
 
   const value = {
-    products,
     rawProducts,
     addProduct,
     removeProduct,

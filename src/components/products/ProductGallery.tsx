@@ -1,17 +1,38 @@
+
 "use client";
 
 import { useProducts } from '@/hooks/useProducts';
 import ProductCard from './ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, SearchX } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 export default function ProductGallery() {
-  const { products: displayedProducts, isHydrated, isLoading, rawProducts, selectedCategory, searchTerm } = useProducts();
+  const { rawProducts, isHydrated, isLoading, selectedCategory, searchTerm } = useProducts();
+
+  const displayedProducts = useMemo(() => {
+    console.log(`ProductGallery: Filtering logic running. Category: '${selectedCategory}', Search: '${searchTerm}'`);
+    
+    let tempProducts = [...rawProducts];
+
+    if (selectedCategory) {
+      tempProducts = tempProducts.filter(product => product.category === selectedCategory);
+    }
+
+    if (searchTerm && searchTerm.trim() !== '') {
+      const lowercasedSearchTerm = searchTerm.toLowerCase();
+      tempProducts = tempProducts.filter(product => {
+        const descriptionMatch = product.description && typeof product.description === 'string' && product.description.toLowerCase().includes(lowercasedSearchTerm);
+        const categoryMatch = product.category && typeof product.category === 'string' && product.category.toLowerCase().includes(lowercasedSearchTerm);
+        return descriptionMatch || categoryMatch;
+      });
+    }
+    return tempProducts;
+  }, [rawProducts, selectedCategory, searchTerm]);
 
   useEffect(() => {
     // DIAGNOSTIC LOG
-    console.log(`ProductGallery updated. Displaying ${displayedProducts.length} of ${rawProducts.length} total products. Category: '${selectedCategory}', Search: '${searchTerm}'`);
+    console.log(`ProductGallery updated. Now displaying ${displayedProducts.length} of ${rawProducts.length} total products. Category: '${selectedCategory}', Search: '${searchTerm}'`);
   }, [displayedProducts, rawProducts.length, selectedCategory, searchTerm]);
 
 
