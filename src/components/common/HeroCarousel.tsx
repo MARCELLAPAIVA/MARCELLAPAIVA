@@ -6,13 +6,13 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HeroCarousel() {
-  const { products, isLoading } = useProducts();
+  const { rawProducts: products, isLoading } = useProducts();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedAlt, setSelectedAlt] = useState<string>("Banner rotativo de produtos em destaque");
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && products.length > 0) {
+    if (!isLoading && products && products.length > 0) {
       const firstProductWithImage = products.find(p => p.imageUrl);
       if (firstProductWithImage) {
         setSelectedImage(firstProductWithImage.imageUrl);
@@ -22,7 +22,7 @@ export default function HeroCarousel() {
         setSelectedImage("https://placehold.co/1200x420.png");
         setSelectedAlt("Banner de produto em destaque");
       }
-    } else if (!isLoading && products.length === 0) {
+    } else if (!isLoading && products && products.length === 0) {
       setSelectedImage("https://placehold.co/1200x420.png");
       setSelectedAlt("Adicione produtos para exibir no carrossel");
     }
