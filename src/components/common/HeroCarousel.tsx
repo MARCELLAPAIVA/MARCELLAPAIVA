@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card } from '@/components/ui/card';
@@ -14,7 +13,6 @@ export default function HeroCarousel() {
 
   useEffect(() => {
     if (!isLoading && products.length > 0) {
-      // Use a deterministic way to select an image to avoid layout shifts on re-render
       const firstProductWithImage = products.find(p => p.imageUrl);
       if (firstProductWithImage) {
         setSelectedImage(firstProductWithImage.imageUrl);
@@ -31,7 +29,7 @@ export default function HeroCarousel() {
   }, [products, isLoading]);
   
   const handleImageError = () => {
-    console.warn(`HeroCarousel: Standard <img> error for URL: ${selectedImage}.`);
+    console.warn(`HeroCarousel: Standard <img> error for URL: ${selectedImage}. Switching to placeholder.`);
     setImageError(true);
   };
 
@@ -58,6 +56,7 @@ export default function HeroCarousel() {
             className="object-cover w-full h-full"
             data-ai-hint="store banner promotion product"
             onError={handleImageError}
+            loading="lazy"
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
             <span className="block w-2.5 h-2.5 bg-white/70 rounded-full"></span>

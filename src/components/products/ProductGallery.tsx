@@ -1,13 +1,19 @@
-
 "use client";
 
 import { useProducts } from '@/hooks/useProducts';
 import ProductCard from './ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, SearchX } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function ProductGallery() {
   const { products: displayedProducts, isHydrated, isLoading, rawProducts, selectedCategory, searchTerm } = useProducts();
+
+  useEffect(() => {
+    // DIAGNOSTIC LOG
+    console.log(`ProductGallery updated. Displaying ${displayedProducts.length} of ${rawProducts.length} total products. Category: '${selectedCategory}', Search: '${searchTerm}'`);
+  }, [displayedProducts, rawProducts.length, selectedCategory, searchTerm]);
+
 
   if (!isHydrated || isLoading) {
     return (

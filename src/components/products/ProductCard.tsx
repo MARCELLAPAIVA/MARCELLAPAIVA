@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Product } from '@/lib/types';
@@ -46,28 +45,19 @@ export default function ProductCard({ product }: ProductCardProps) {
     setImageError(true);
   };
 
+  const finalImageUrl = imageError || !isValidImageUrl ? "https://placehold.co/400x400.png" : product.imageUrl;
+
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
-        {imageError ? (
-          <div className="text-xs text-muted-foreground p-2">
-            <p className="text-destructive font-semibold">Imagem indisponível.</p>
-            <p className="truncate mt-1 text-destructive/70" title={product.imageUrl || "URL não disponível"}>Falha ao carregar a URL</p>
-          </div>
-        ) : isValidImageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={altText}
-            className="object-cover w-full h-full"
-            onError={handleImageError}
-            data-ai-hint="product tobacco"
-            loading="lazy"
-          />
-        ) : (
-          <div className="text-xs text-muted-foreground p-2">
-            <p>Sem imagem cadastrada.</p>
-          </div>
-        )}
+        <img
+          src={finalImageUrl}
+          alt={altText}
+          className="object-cover w-full h-full"
+          onError={handleImageError}
+          data-ai-hint="product tobacco"
+          loading="lazy"
+        />
       </div>
 
       <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
@@ -100,7 +90,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl || imageError}
+            disabled={imageError || !isValidImageUrl}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento

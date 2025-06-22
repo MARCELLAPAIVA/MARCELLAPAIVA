@@ -1,1 +1,1 @@
-// This file is no longer used and can be removed.
+// This component is no longer used and will be deleted.

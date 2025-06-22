@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ReactNode } from 'react';
@@ -130,6 +129,9 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const products = useMemo(() => {
+    // DIAGNOSTIC LOG
+    console.log(`ProductsContext: Filtering products. Category: '${selectedCategory}', Search: '${searchTerm}'`);
+    
     let tempProducts = [...rawProducts];
 
     if (selectedCategory) {
