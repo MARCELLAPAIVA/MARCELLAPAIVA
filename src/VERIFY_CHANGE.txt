@@ -1,0 +1,1 @@
+Este arquivo é um sinal. Se você o vê, as alterações foram aplicadas. Você pode executar 'git add .', 'git commit', e 'git push' agora.
