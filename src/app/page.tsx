@@ -15,6 +15,12 @@ function HomePageContent() {
   const selectedCategory = searchParams.get('category');
   const searchTerm = searchParams.get('search');
 
+  // Create a dynamic key based on the current filters.
+  // When this key changes, React will unmount and re-mount the ProductGallery,
+  // guaranteeing it re-renders with the correct, filtered products.
+  // This is a robust fix for production environment state/rendering issues.
+  const galleryKey = `${selectedCategory || 'all'}-${searchTerm || 'none'}`;
+
   return (
     <div className="space-y-8 sm:space-y-12">
       <HeroCarousel />
@@ -32,6 +38,7 @@ function HomePageContent() {
           </div>
         </div>
         <ProductGallery
+          key={galleryKey}
           selectedCategory={selectedCategory}
           searchTerm={searchTerm}
         />
