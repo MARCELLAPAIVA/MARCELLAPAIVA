@@ -34,8 +34,8 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string | null>(null);
+  const [selectedCategory, _setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, _setSearchTerm] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
@@ -111,6 +111,17 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
       setIsMutating(false);
     }
   }, [toast]);
+
+  const setSelectedCategory = useCallback((category: string | null) => {
+    console.log(`[ProductsContext] Setting selected category to: '${category}'`);
+    _setSelectedCategory(category);
+  }, []);
+
+  const setSearchTerm = useCallback((term: string | null) => {
+    console.log(`[ProductsContext] Setting search term to: '${term}'`);
+    _setSearchTerm(term);
+  }, []);
+
 
   const isHydrated = !isLoading;
 

@@ -27,21 +27,29 @@ function CartItemImage({ item }: { item: CartItem }) {
         // If imageUrl is not already present in the cart item, fetch it
         if (!imageUrl && item.product.storagePath) {
             setIsLoading(true);
+            console.log(`[CartItemImage] Fetching image for product ID ${item.product.id} from path: ${item.product.storagePath}`);
             const imageRef = ref(storage, item.product.storagePath);
             getDownloadURL(imageRef)
                 .then(url => {
-                    if (isMounted) setImageUrl(url);
+                    if (isMounted) {
+                        console.log(`[CartItemImage] SUCCESS: Got URL for ${item.product.id}:`, url.substring(0, 50) + "...");
+                        setImageUrl(url);
+                    }
                 })
                 .catch(err => {
-                    console.error(`Cart: Failed to get URL for ${item.product.storagePath}`, err);
+                    console.error(`[CartItemImage] FAILED to get download URL for product ${item.product.id} (path: ${item.product.storagePath})`, err);
                     if (isMounted) setImageUrl("https://placehold.co/100x100.png");
                 })
                 .finally(() => {
                     if(isMounted) setIsLoading(false);
                 });
+        } else if (!item.product.storagePath) {
+            console.warn(`[CartItemImage] Product ID ${item.product.id} in cart has no storagePath.`);
+            setImageUrl("https://placehold.co/100x100.png");
+            setIsLoading(false);
         }
         return () => { isMounted = false; };
-    }, [item.product.storagePath, imageUrl]);
+    }, [item.product.storagePath, imageUrl, item.product.id]);
 
     if (isLoading) {
         return <Skeleton className="h-20 w-20 rounded bg-muted" />;

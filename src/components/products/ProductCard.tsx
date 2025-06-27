@@ -26,17 +26,20 @@ export default function ProductCard({ product }: ProductCardProps) {
   useEffect(() => {
     let isMounted = true;
     if (product.storagePath) {
+      console.log(`[ProductCard] Fetching image for product ID ${product.id} from path: ${product.storagePath}`);
       const imageRef = ref(storage, product.storagePath);
       getDownloadURL(imageRef)
         .then((url) => {
           if (isMounted) {
+            console.log(`[ProductCard] SUCCESS: Got URL for ${product.id}:`, url.substring(0, 50) + "...");
             setImageUrl(url);
           }
         })
         .catch((error) => {
-          console.error(`ProductCard: FAILED to get download URL for ${product.storagePath}`, error);
-          // Set to a placeholder or leave null to show error state
-          setImageUrl("https://placehold.co/400x400.png"); 
+          console.error(`[ProductCard] FAILED to get download URL for product ${product.id} (path: ${product.storagePath})`, error);
+          if (isMounted) {
+            setImageUrl("https://placehold.co/400x400.png"); 
+          }
         })
         .finally(() => {
           if (isMounted) {
@@ -44,6 +47,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           }
         });
     } else {
+        console.warn(`[ProductCard] Product ID ${product.id} has no storagePath.`);
         setIsLoadingImage(false);
         setImageUrl("https://placehold.co/400x400.png");
     }
@@ -51,7 +55,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     return () => {
       isMounted = false;
     };
-  }, [product.storagePath]);
+  }, [product.storagePath, product.id]);
 
 
   if (!product || typeof product.id !== 'string') {
@@ -73,8 +77,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       const productWithUrl = { ...product, imageUrl };
       addToCart(productWithUrl);
     } else {
-      // You could show a toast here if you want
-      console.warn("Add to cart clicked before image URL was resolved.");
+      console.warn(`[ProductCard] Add to cart clicked for product ${product.id} before image URL was resolved.`);
     }
   };
   
@@ -93,7 +96,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="object-cover w-full h-full"
             data-ai-hint="product tobacco"
             onError={(e) => {
-              console.error(`ProductCard: FAILED to render image for product ${product.id}. URL: ${imageUrl}`);
+              console.error(`[ProductCard] HTML img tag FAILED to render image for product ${product.id}. URL: ${imageUrl}`);
               (e.target as HTMLImageElement).src = "https://placehold.co/400x400.png";
             }}
           />

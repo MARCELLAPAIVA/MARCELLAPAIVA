@@ -37,13 +37,17 @@ function AdminProductImage({ storagePath, alt }: { storagePath: string, alt: str
     useEffect(() => {
         let isMounted = true;
         if (storagePath && !imageUrl) {
+            console.log(`[AdminProductImage] Fetching image from path: ${storagePath}`);
             const imageRef = ref(storage, storagePath);
             getDownloadURL(imageRef)
                 .then(url => {
-                    if (isMounted) setImageUrl(url);
+                    if (isMounted) {
+                        console.log(`[AdminProductImage] SUCCESS: Got URL for ${storagePath}:`, url.substring(0, 50) + "...");
+                        setImageUrl(url);
+                    }
                 })
                 .catch(err => {
-                    console.error(`Admin: Failed to get URL for ${storagePath}`, err);
+                    console.error(`[AdminProductImage] FAILED to get download URL for path ${storagePath}`, err);
                     if (isMounted) setError(true);
                 });
         }

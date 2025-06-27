@@ -38,6 +38,7 @@ export default function Header() {
 
   const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const term = event.target.value;
+    console.log(`[Header] Search term changed to: ${term}`);
     setLocalSearchTerm(term);
     setSearchTerm(term === "" ? null : term);
   };
@@ -53,6 +54,7 @@ export default function Header() {
   };
 
   const handleCategorySelect = (category: string | null) => {
+    console.log(`[Header] Category selected from sheet: ${category}`);
     setSelectedCategory(category);
     setIsSheetOpen(false); // Fechar o menu após a seleção
   };

@@ -17,35 +17,34 @@ export default function HeroCarousel() {
   useEffect(() => {
     let isMounted = true;
     
-    // Only proceed if products are loaded and there's at least one product
     if (!isLoading && rawProducts && rawProducts.length > 0) {
-      // Find the first product that has a storagePath
       const firstProductWithImage = rawProducts.find(p => p.storagePath);
       
       if (firstProductWithImage) {
-        // Asynchronously get the download URL from the storage path
+        console.log(`[HeroCarousel] Attempting to load image from path: ${firstProductWithImage.storagePath}`);
         const imageRef = ref(storage, firstProductWithImage.storagePath);
         getDownloadURL(imageRef)
           .then(url => {
             if (isMounted) {
+              console.log(`[HeroCarousel] SUCCESS: Got URL for ${firstProductWithImage.storagePath}:`, url.substring(0, 50) + "...");
               setSelectedImage(url);
               setSelectedAlt(firstProductWithImage.description ? `Imagem de ${firstProductWithImage.description.substring(0, 50)}` : "Imagem de produto em destaque");
             }
           })
           .catch(error => {
-            console.error("HeroCarousel: Failed to get download URL", error);
+            console.error(`[HeroCarousel] FAILED to get download URL for path ${firstProductWithImage.storagePath}`, error);
             if (isMounted) {
-              setSelectedImage("https://placehold.co/1200x420.png"); // Fallback on error
+              setSelectedImage("https://placehold.co/1200x420.png"); 
               setSelectedAlt("Erro ao carregar imagem do produto");
             }
           });
       } else {
-        // Fallback if no products have a storagePath
+        console.warn("[HeroCarousel] No products with a valid storagePath found.");
         setSelectedImage("https://placehold.co/1200x420.png");
         setSelectedAlt("Banner de produto em destaque");
       }
     } else if (!isLoading) {
-      // Fallback if there are no products
+      console.warn("[HeroCarousel] No products available to display in carousel.");
       setSelectedImage("https://placehold.co/1200x420.png");
       setSelectedAlt("Adicione produtos para exibir no carrossel");
     }
@@ -78,7 +77,7 @@ export default function HeroCarousel() {
             className="object-cover w-full h-full"
             data-ai-hint="store banner promotion product"
             onError={(e) => {
-                console.error(`HeroCarousel: FAILED to load image. URL: ${selectedImage}`);
+                console.error(`[HeroCarousel] HTML img tag FAILED to load image. URL: ${selectedImage}`);
                 (e.target as HTMLImageElement).src = 'https://placehold.co/1200x420.png';
             }}
           />

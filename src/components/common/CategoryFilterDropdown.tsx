@@ -18,6 +18,7 @@ export default function CategoryFilterDropdown() {
   const { setSelectedCategory, selectedCategory } = useProducts();
 
   const handleValueChange = (value: string) => {
+    console.log(`[CategoryFilterDropdown] Value changed to: ${value}`);
     if (value === ALL_CATEGORIES_VALUE) {
       setSelectedCategory(null);
     } else {

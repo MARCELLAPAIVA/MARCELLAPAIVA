@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useProducts } from '@/hooks/useProducts';
@@ -25,8 +26,8 @@ export default function ProductGallery() {
 
   useEffect(() => {
     // DIAGNOSTIC LOG
-    console.log(`ProductGallery updated. Now displaying ${displayedProducts.length} of ${rawProducts.length} total products. Category: '${selectedCategory}', Search: '${searchTerm}'`);
-  }, [displayedProducts, rawProducts.length, selectedCategory, searchTerm]);
+    console.log(`[ProductGallery] Re-rendering. Total raw products: ${rawProducts.length}. Category filter: '${selectedCategory}'. Search filter: '${searchTerm}'. Products to display: ${displayedProducts.length}`);
+  }, [rawProducts.length, selectedCategory, searchTerm, displayedProducts.length]);
 
 
   if (!isHydrated || isLoading) {
@@ -103,7 +104,7 @@ export default function ProductGallery() {
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {displayedProducts.map((product, index) => {
         if (!product || typeof product.id !== 'string') {
-          console.error(`ProductGallery: CRITICAL - Invalid product object or missing/invalid ID at index ${index} during map:`, product); 
+          console.error(`[ProductGallery] CRITICAL - Invalid product object or missing/invalid ID at index ${index} during map:`, product); 
           return (
             <div key={`error-${index}-${Math.random()}`} className="p-2 border border-destructive bg-destructive/10 text-destructive-foreground text-xs">
               Erro: Produto inválido no índice {index}. Verifique o console.
