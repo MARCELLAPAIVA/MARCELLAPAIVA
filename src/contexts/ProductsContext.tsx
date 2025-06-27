@@ -112,15 +112,15 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast]);
 
-  const setSelectedCategory = useCallback((category: string | null) => {
+  const setSelectedCategory = (category: string | null) => {
     console.log(`[ProductsContext] Setting selected category to: '${category}'`);
     _setSelectedCategory(category);
-  }, []);
+  };
 
-  const setSearchTerm = useCallback((term: string | null) => {
+  const setSearchTerm = (term: string | null) => {
     console.log(`[ProductsContext] Setting search term to: '${term}'`);
     _setSearchTerm(term);
-  }, []);
+  };
 
 
   const isHydrated = !isLoading;
