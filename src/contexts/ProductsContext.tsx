@@ -20,10 +20,6 @@ interface ProductsContextType {
   isMutating: boolean;
   isHydrated: boolean;
   refetchProducts: () => Promise<void>;
-  selectedCategory: string | null;
-  setSelectedCategory: (category: string | null) => void;
-  searchTerm: string | null;
-  setSearchTerm: (term: string | null) => void;
 }
 
 // Create the context
@@ -34,8 +30,6 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMutating, setIsMutating] = useState(false);
-  const [selectedCategory, _setSelectedCategory] = useState<string | null>(null);
-  const [searchTerm, _setSearchTerm] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = useCallback(async () => {
@@ -112,17 +106,6 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast]);
 
-  const setSelectedCategory = (category: string | null) => {
-    console.log(`[ProductsContext] Setting selected category to: '${category}'`);
-    _setSelectedCategory(category);
-  };
-
-  const setSearchTerm = (term: string | null) => {
-    console.log(`[ProductsContext] Setting search term to: '${term}'`);
-    _setSearchTerm(term);
-  };
-
-
   const isHydrated = !isLoading;
 
   const value = {
@@ -133,10 +116,6 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     isMutating,
     isHydrated,
     refetchProducts: fetchProducts,
-    selectedCategory,
-    setSelectedCategory,
-    searchTerm,
-    setSearchTerm,
   };
 
   return <ProductsContext.Provider value={value}>{children}</ProductsContext.Provider>;

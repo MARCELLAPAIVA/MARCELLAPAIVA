@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Search, Menu, X, ShieldCheck, ListFilter, ShoppingCartIcon } from 'lucide-react'; // Adicionado ShoppingCartIcon
+import { Search, Menu, X, ShieldCheck, ListFilter, ShoppingCartIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,19 +16,24 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { categories } from '@/lib/categories';
-import { useProducts } from '@/hooks/useProducts';
-import { useCart } from '@/contexts/CartContext'; // Importar useCart
-import { useAuth } from '@/contexts/AuthContext'; // Importar useAuth
+import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function Header() {
-  const { setSearchTerm, setSelectedCategory, selectedCategory } = useProducts();
   const { getTotalItems, isCartVisibleToUser } = useCart();
-  const { user } = useAuth(); // Para verificar status do usuário para o carrinho
-
-  const [isSearchInputVisible, setIsSearchInputVisible] = useState(false);
-  const [localSearchTerm, setLocalSearchTerm] = useState("");
-  const [isSheetOpen, setIsSheetOpen] = useState(false); // Controlar o estado do menu
+  const { user } = useAuth();
+  
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedCategory = searchParams.get('category');
+  const currentSearchTerm = searchParams.get('search');
+  
+  const [isSearchInputVisible, setIsSearchInputVisible] = useState(!!currentSearchTerm);
+  const [localSearchTerm, setLocalSearchTerm] = useState(currentSearchTerm || "");
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const totalCartItems = getTotalItems();
 
@@ -36,29 +41,30 @@ export default function Header() {
     setIsSearchInputVisible(true);
   };
 
-  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const term = event.target.value;
-    console.log(`[Header] Search term changed to: ${term}`);
-    setLocalSearchTerm(term);
-    setSearchTerm(term === "" ? null : term);
-  };
-
-  const handleClearSearch = () => {
-    setLocalSearchTerm("");
-    setSearchTerm(null);
-    setIsSearchInputVisible(false);
+  const createQueryString = (paramsToUpdate: { [key: string]: string | null }): string => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    Object.entries(paramsToUpdate).forEach(([key, value]) => {
+      if (value === null) {
+        current.delete(key);
+      } else {
+        current.set(key, value);
+      }
+    });
+    return current.toString();
   };
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const queryString = createQueryString({ 'search': localSearchTerm || null });
+    router.push(pathname + (queryString ? `?${queryString}` : ''));
   };
 
-  const handleCategorySelect = (category: string | null) => {
-    console.log(`[Header] Category selected from sheet: ${category}`);
-    setSelectedCategory(category);
-    setIsSheetOpen(false); // Fechar o menu após a seleção
+  const handleClearSearch = () => {
+    setLocalSearchTerm("");
+    const queryString = createQueryString({ 'search': null });
+    router.push(pathname + (queryString ? `?${queryString}` : ''));
+    setIsSearchInputVisible(false);
   };
-
 
   return (
     <header className="bg-black text-white shadow-md sticky top-0 z-50">
@@ -88,22 +94,24 @@ export default function Header() {
                   <ScrollArea className="flex-grow">
                     <ul className="space-y-1 p-4">
                       <li>
-                        <button
-                          onClick={() => handleCategorySelect(null)}
+                        <Link
+                          href={pathname}
+                          onClick={() => setIsSheetOpen(false)}
                           className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body flex items-center text-foreground hover:bg-muted/50 ${!selectedCategory ? 'bg-primary/10 text-primary font-semibold' : ''}`}
                         >
                           <ListFilter size={18} className="mr-2 opacity-70" />
                           Todas as Categorias
-                        </button>
+                        </Link>
                       </li>
                       {categories.map((category) => (
                         <li key={category}>
-                          <button
-                            onClick={() => handleCategorySelect(category)}
+                           <Link
+                            href={`${pathname}?${createQueryString({ category: category })}`}
+                            onClick={() => setIsSheetOpen(false)}
                             className={`w-full text-left py-3 px-3 rounded-md transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary font-body text-foreground hover:bg-muted/50 ${selectedCategory === category ? 'bg-primary/10 text-primary font-semibold' : ''}`}
                           >
                             {category}
-                          </button>
+                          </Link>
                         </li>
                       ))}
                     </ul>
@@ -161,7 +169,7 @@ export default function Header() {
               type="search"
               placeholder="Buscar produtos ou categorias..."
               value={localSearchTerm}
-              onChange={handleSearchInputChange}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               className="h-9 bg-gray-700 text-white border-gray-600 focus:ring-primary placeholder-gray-400 flex-grow rounded-full px-4"
               autoFocus
             />

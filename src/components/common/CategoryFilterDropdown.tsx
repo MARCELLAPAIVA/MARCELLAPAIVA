@@ -1,6 +1,8 @@
 
 "use client";
 
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
 import {
   Select,
   SelectContent,
@@ -9,21 +11,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { categories } from "@/lib/categories";
-import { useProducts } from "@/hooks/useProducts";
 import { Filter } from "lucide-react";
 
 const ALL_CATEGORIES_VALUE = "all";
 
 export default function CategoryFilterDropdown() {
-  const { setSelectedCategory, selectedCategory } = useProducts();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedCategory = searchParams.get('category');
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value === ALL_CATEGORIES_VALUE) {
+        params.delete(name);
+      } else {
+        params.set(name, value);
+      }
+      return params.toString();
+    },
+    [searchParams]
+  );
 
   const handleValueChange = (value: string) => {
-    console.log(`[CategoryFilterDropdown] Value changed to: ${value}`);
-    if (value === ALL_CATEGORIES_VALUE) {
-      setSelectedCategory(null);
-    } else {
-      setSelectedCategory(value);
-    }
+    const queryString = createQueryString('category', value);
+    router.push(pathname + (queryString ? `?${queryString}` : ''));
   };
 
   return (

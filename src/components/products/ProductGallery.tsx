@@ -5,16 +5,22 @@ import { useProducts } from '@/hooks/useProducts';
 import ProductCard from './ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, SearchX } from 'lucide-react';
-import { useEffect } from 'react';
 
-export default function ProductGallery() {
-  const { rawProducts, isHydrated, isLoading, selectedCategory, searchTerm } = useProducts();
+interface ProductGalleryProps {
+  selectedCategory: string | null;
+  searchTerm: string | null;
+}
 
-  // Perform filtering directly in the render body to avoid potential production build issues with useMemo
-  let displayedProducts = [...rawProducts];
+export default function ProductGallery({ selectedCategory, searchTerm }: ProductGalleryProps) {
+  const { rawProducts, isHydrated, isLoading } = useProducts();
+
+  // Perform filtering directly in the render body
+  let displayedProducts = rawProducts;
+
   if (selectedCategory) {
     displayedProducts = displayedProducts.filter(product => product.category === selectedCategory);
   }
+
   if (searchTerm && searchTerm.trim() !== '') {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
     displayedProducts = displayedProducts.filter(product => {
@@ -23,12 +29,6 @@ export default function ProductGallery() {
       return descriptionMatch || categoryMatch;
     });
   }
-
-  useEffect(() => {
-    // DIAGNOSTIC LOG
-    console.log(`[ProductGallery] Re-rendering. Total raw products: ${rawProducts.length}. Category filter: '${selectedCategory}'. Search filter: '${searchTerm}'. Products to display: ${displayedProducts.length}`);
-  }, [rawProducts.length, selectedCategory, searchTerm, displayedProducts.length]);
-
 
   if (!isHydrated || isLoading) {
     return (
