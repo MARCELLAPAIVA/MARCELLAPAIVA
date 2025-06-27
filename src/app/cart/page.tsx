@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,52 @@ import { Separator } from '@/components/ui/separator';
 import { Trash2, ShoppingBag, ArrowLeft, MessageSquareQuote } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from '@/components/ui/skeleton';
+import { storage, ref } from '@/lib/firebase';
+import { getDownloadURL } from 'firebase/storage';
+import type { CartItem } from '@/lib/types';
+
+// A small component to handle dynamic image loading for each cart item
+function CartItemImage({ item }: { item: CartItem }) {
+    const [imageUrl, setImageUrl] = useState<string | null>(item.product.imageUrl || null);
+    const [isLoading, setIsLoading] = useState(!item.product.imageUrl);
+
+    useEffect(() => {
+        let isMounted = true;
+        // If imageUrl is not already present in the cart item, fetch it
+        if (!imageUrl && item.product.storagePath) {
+            setIsLoading(true);
+            const imageRef = ref(storage, item.product.storagePath);
+            getDownloadURL(imageRef)
+                .then(url => {
+                    if (isMounted) setImageUrl(url);
+                })
+                .catch(err => {
+                    console.error(`Cart: Failed to get URL for ${item.product.storagePath}`, err);
+                    if (isMounted) setImageUrl("https://placehold.co/100x100.png");
+                })
+                .finally(() => {
+                    if(isMounted) setIsLoading(false);
+                });
+        }
+        return () => { isMounted = false; };
+    }, [item.product.storagePath, imageUrl]);
+
+    if (isLoading) {
+        return <Skeleton className="h-20 w-20 rounded bg-muted" />;
+    }
+
+    return (
+        <Image
+            src={imageUrl || "https://placehold.co/100x100.png"}
+            alt={item.product.description}
+            width={80}
+            height={80}
+            className="rounded object-cover aspect-square"
+            data-ai-hint="product tobacco accessory"
+        />
+    );
+}
+
 
 export default function CartPage() {
   const { 
@@ -28,7 +74,7 @@ export default function CartPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const WHATSAPP_NUMBER = "5521991633082"; // Seu número do WhatsApp
+  const WHATSAPP_NUMBER = "5521991633082"; 
 
   useEffect(() => {
     if (!authLoading && !isCartVisibleToUser) {
@@ -43,7 +89,7 @@ export default function CartPage() {
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) {
-      updateQuantity(productId, 1); // Força a quantidade mínima como 1 se tentar ir abaixo
+      updateQuantity(productId, 1);
     } else {
       updateQuantity(productId, newQuantity);
     }
@@ -58,7 +104,6 @@ export default function CartPage() {
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     toast({ title: "Pedido Enviado!", description: "Seu pedido foi encaminhado via WhatsApp. Aguarde o contato.", variant: "default", duration: 7000 });
-    // clearCart(); // Opcional: Limpar carrinho após enviar
   };
   
   if (authLoading || (!user && !authLoading)) {
@@ -131,14 +176,7 @@ export default function CartPage() {
         <div className="space-y-4">
           {cartItems.map(item => (
             <div key={item.product.id} className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 p-4 border border-border rounded-lg bg-card shadow">
-              <Image
-                src={item.product.imageUrl || "https://placehold.co/100x100.png"}
-                alt={item.product.description}
-                width={80}
-                height={80}
-                className="rounded object-cover aspect-square"
-                data-ai-hint="product tobacco accessory"
-              />
+              <CartItemImage item={item} />
               <div className="flex-grow text-center sm:text-left">
                 <p className="font-semibold text-foreground line-clamp-2">{item.product.description}</p>
                 {typeof item.product.price === 'number' && (
@@ -173,7 +211,7 @@ export default function CartPage() {
               onClick={handleSendOrder} 
               className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-headline py-3 px-6 rounded-md text-lg"
             >
-              <MessageSquareQuote size={20} className="mr-2" /> {/* Ícone para WhatsApp */}
+              <MessageSquareQuote size={20} className="mr-2" />
               Enviar Pedido via WhatsApp
             </Button>
           </div>

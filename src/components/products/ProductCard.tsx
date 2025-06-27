@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Product } from '@/lib/types';
@@ -8,21 +9,50 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { storage, ref } from '@/lib/firebase';
+import { getDownloadURL } from 'firebase/storage';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [useImgFallback, setUseImgFallback] = useState(false);
   const { user } = useAuth();
   const { addToCart, isCartVisibleToUser } = useCart();
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(true);
 
   useEffect(() => {
-    // Reset fallback state when the product prop changes
-    setUseImgFallback(false);
-  }, [product]);
+    let isMounted = true;
+    if (product.storagePath) {
+      const imageRef = ref(storage, product.storagePath);
+      getDownloadURL(imageRef)
+        .then((url) => {
+          if (isMounted) {
+            setImageUrl(url);
+          }
+        })
+        .catch((error) => {
+          console.error(`ProductCard: FAILED to get download URL for ${product.storagePath}`, error);
+          // Set to a placeholder or leave null to show error state
+          setImageUrl("https://placehold.co/400x400.png"); 
+        })
+        .finally(() => {
+          if (isMounted) {
+            setIsLoadingImage(false);
+          }
+        });
+    } else {
+        setIsLoadingImage(false);
+        setImageUrl("https://placehold.co/400x400.png");
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [product.storagePath]);
+
 
   if (!product || typeof product.id !== 'string') {
     return (
@@ -35,52 +65,39 @@ export default function ProductCard({ product }: ProductCardProps) {
   
   const safeDescription = product.description || "Descrição Indisponível";
   const productName = safeDescription.substring(0, 40) + (safeDescription.length > 40 ? "..." : "");
-  const isValidImageUrl = product.imageUrl && typeof product.imageUrl === 'string' && (product.imageUrl.startsWith('https://') || product.imageUrl.startsWith('http://'));
   const altText = (product.imageName || productName || "Imagem do produto").substring(0,100);
 
   const handleAddToCart = () => {
-    addToCart(product);
+    if (imageUrl) {
+      // Add the resolved image URL to the product object before adding to cart
+      const productWithUrl = { ...product, imageUrl };
+      addToCart(productWithUrl);
+    } else {
+      // You could show a toast here if you want
+      console.warn("Add to cart clicked before image URL was resolved.");
+    }
   };
   
-  const finalImageUrl = !isValidImageUrl ? "https://placehold.co/400x400.png" : product.imageUrl;
-
-  const renderImage = () => {
-    if (!isValidImageUrl) {
-        return <Image src="https://placehold.co/400x400.png" alt="Imagem de placeholder" fill className="object-cover" />;
-    }
-    
-    if (useImgFallback) {
-        return (
-            <img
-                src={finalImageUrl}
-                alt={altText}
-                className="object-cover w-full h-full"
-                loading="lazy"
-                onError={() => console.error(`ProductCard: Standard <img> also failed for ${product.id}`)}
-            />
-        );
-    }
-
-    return (
-        <Image
-            src={finalImageUrl}
-            alt={altText}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-            data-ai-hint="product tobacco"
-            onError={() => {
-                console.warn(`ProductCard: next/image failed for ${product.id}. Trying <img> fallback.`);
-                setUseImgFallback(true);
-            }}
-        />
-    );
-  };
-
   return (
     <Card className="bg-card border-border hover:shadow-lg transition-shadow duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       <div className="aspect-square relative w-full overflow-hidden bg-muted flex items-center justify-center p-1 text-center">
-        {renderImage()}
+        {isLoadingImage ? (
+          <Skeleton className="w-full h-full" />
+        ) : (
+          <img
+            key={product.id}
+            src={imageUrl || "https://placehold.co/400x400.png"}
+            alt={altText}
+            crossOrigin="anonymous"
+            loading="lazy"
+            className="object-cover w-full h-full"
+            data-ai-hint="product tobacco"
+            onError={(e) => {
+              console.error(`ProductCard: FAILED to render image for product ${product.id}. URL: ${imageUrl}`);
+              (e.target as HTMLImageElement).src = "https://placehold.co/400x400.png";
+            }}
+          />
+        )}
       </div>
 
       <CardContent className="p-3 flex-grow flex flex-col justify-between items-center text-center">
@@ -113,7 +130,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             size="sm"
             className="w-full text-primary border-primary hover:bg-primary/10 hover:text-primary"
             onClick={handleAddToCart}
-            disabled={!isValidImageUrl}
+            disabled={isLoadingImage || !imageUrl || !product.storagePath}
           >
             <ShoppingCart size={16} className="mr-2" />
             Adicionar ao Orçamento

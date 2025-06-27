@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getStorage, type FirebaseStorage, ref } from 'firebase/storage'; // Added ref
 import { getAuth, type Auth } from 'firebase/auth';
 
 console.log("Firebase: Attempting to load firebase.ts module...");
@@ -12,7 +12,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyD2OaJq8Psvj3mCLDBCrcv-7d24eINCSPs",
   authDomain: "whisk-51712.firebaseapp.com",
   projectId: "whisk-51712",
-  storageBucket: "whisk-51712.firebasestorage.app",
+  storageBucket: "whisk-51712.appspot.com",
   messagingSenderId: "880868191941",
   appId: "1:880868191941:web:847167a98ae595c9420aac",
   measurementId: "G-55KD657X9H"
@@ -71,4 +71,4 @@ try {
 
 console.log("Firebase: firebase.ts module loaded. Final status - app:", app ? `initialized (Project: ${app.options.projectId})` : 'undefined', "db:", db ? 'initialized' : 'undefined', "storage:", storage ? 'initialized' : 'undefined', "auth:", auth ? 'initialized' : 'undefined');
 
-export { app, db, storage, auth };
+export { app, db, storage, auth, ref };

@@ -5,8 +5,9 @@ export type UserRole = 'admin' | 'client';
 export interface Product {
   id: string; // Firestore document ID
   description: string;
-  imageUrl: string; // URL from Firebase Storage
-  imageName?: string; // Original image name, can be part of the storage path
+  storagePath: string; // Path in Firebase Storage, e.g., "products/xyz/image.jpg"
+  imageUrl?: string; // Optional: will be populated on the client-side dynamically
+  imageName?: string; // The simple name of the file in storage, e.g., "image.jpg"
   price: number; // Product price
   category: string; // Product category
   createdAt: number; // Timestamp for sorting

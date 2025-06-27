@@ -14,8 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 // Define the shape of the context state
 interface ProductsContextType {
   rawProducts: Product[];
-  addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl' | 'imageName'>, imageFile: File) => Promise<void>;
-  removeProduct: (id: string, imageUrl: string, productName?: string) => Promise<void>;
+  addProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'storagePath' | 'imageName'>, imageFile: File) => Promise<void>;
+  removeProduct: (id: string, storagePath: string, productName?: string) => Promise<void>;
   isLoading: boolean;
   isMutating: boolean;
   isHydrated: boolean;
@@ -43,19 +43,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     try {
       const firebaseProducts = await getProductsFromFirebase();
       if (Array.isArray(firebaseProducts)) {
-        const validProducts = firebaseProducts.filter(p => {
-          if (!p || !p.id || typeof p.description !== 'string') {
-            console.warn("ProductsProvider: Invalid product object found and filtered out:", p);
-            return false;
-          }
-          if (typeof p.imageUrl !== 'string' || !p.imageUrl.startsWith('https://')) {
-             if (typeof p.imageUrl !== 'string' || !p.imageUrl.startsWith('http://localhost')) {
-                console.warn(`ProductsProvider: Product ID ${p.id} ('${p.description?.substring(0,20)}') has invalid or missing imageUrl:`, p.imageUrl);
-             }
-          }
-          return true;
-        });
-        setRawProducts(validProducts);
+        setRawProducts(firebaseProducts);
       } else {
         console.error("ProductsProvider: getProductsFromFirebase did not return an array. Received:", firebaseProducts);
         setRawProducts([]);
@@ -78,22 +66,18 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchProducts]);
 
   const addProduct = useCallback(async (
-    productData: Omit<Product, 'id' | 'createdAt' | 'imageUrl' | 'imageName'>,
+    productData: Omit<Product, 'id' | 'createdAt' | 'storagePath' | 'imageName'>,
     imageFile: File
   ) => {
     setIsMutating(true);
     try {
-      const newProduct = await addProductToFirebase(productData, imageFile);
-      if (newProduct) {
-        await fetchProducts(); 
-        toast({
-          title: "Sucesso!",
-          description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
-          variant: "default",
-        });
-      } else {
-        throw new Error("addProductToFirebase returned null or invalid product");
-      }
+      await addProductToFirebase(productData, imageFile);
+      await fetchProducts(); 
+      toast({
+        title: "Sucesso!",
+        description: `Produto "${productData.description.substring(0,30)}..." adicionado.`,
+        variant: "default",
+      });
     } catch (error) {
       console.error("ProductsProvider: FAILED to add product:", error);
       toast({
@@ -106,10 +90,10 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast, fetchProducts]);
 
-  const removeProduct = useCallback(async (id: string, imageUrl: string, productName?: string) => {
+  const removeProduct = useCallback(async (id: string, storagePath: string, productName?: string) => {
     setIsMutating(true);
     try {
-      await deleteProductFromFirebase(id, imageUrl);
+      await deleteProductFromFirebase(id, storagePath);
       setRawProducts((prevProducts) => prevProducts.filter((p) => p.id !== id)); 
       toast({
         title: "Produto Removido",

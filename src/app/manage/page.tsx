@@ -23,8 +23,57 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
-import UserManagementSection from '@/components/admin/UserManagementSection'; // Importar
-import { Separator } from '@/components/ui/separator'; // Importar Separator
+import UserManagementSection from '@/components/admin/UserManagementSection';
+import { Separator } from '@/components/ui/separator';
+import { getDownloadURL, ref } from 'firebase/storage';
+import { storage } from '@/lib/firebase';
+import { useState } from 'react';
+
+// A small component to handle dynamic image loading for the admin page
+function AdminProductImage({ storagePath, alt }: { storagePath: string, alt: string }) {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (storagePath && !imageUrl) {
+            const imageRef = ref(storage, storagePath);
+            getDownloadURL(imageRef)
+                .then(url => {
+                    if (isMounted) setImageUrl(url);
+                })
+                .catch(err => {
+                    console.error(`Admin: Failed to get URL for ${storagePath}`, err);
+                    if (isMounted) setError(true);
+                });
+        }
+        return () => { isMounted = false; };
+    }, [storagePath, imageUrl]);
+
+    if (error) {
+        return (
+            <div className="w-full h-full rounded-t-lg bg-destructive/20 flex items-center justify-center">
+                <span className="text-destructive-foreground text-xs p-1">Erro!</span>
+            </div>
+        )
+    }
+
+    if (!imageUrl) {
+        return <Skeleton className="w-full h-full rounded-t-lg bg-muted" />;
+    }
+
+    return (
+        <Image
+            src={imageUrl}
+            alt={alt}
+            fill
+            className="object-cover w-full h-full rounded-t-lg"
+            data-ai-hint="product tobacco accessory"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+    )
+}
+
 
 export default function ManageProductsPage() {
   const { user, isLoading: authIsLoading } = useAuth();
@@ -52,8 +101,8 @@ export default function ManageProductsPage() {
     }
   }, [user, authIsLoading, router, toast]);
 
-  const handleDelete = (id: string, imageUrl: string, productName?: string) => {
-    removeProduct(id, imageUrl, productName);
+  const handleDelete = (id: string, storagePath: string, productName?: string) => {
+    removeProduct(id, storagePath, productName);
   };
 
   if (authIsLoading || (!user && !authIsLoading) || (user && (user.role !== 'admin' || user.status !== 'approved') && !authIsLoading) ) {
@@ -160,15 +209,8 @@ export default function ManageProductsPage() {
               return (
                 <Card key={product.id} className="bg-card border-border flex flex-col justify-between shadow-lg">
                   <CardHeader className="p-0 relative aspect-[16/10]">
-                    {product.imageUrl ? (
-                      <Image
-                        src={product.imageUrl}
-                        alt={altText}
-                        fill
-                        className="object-cover w-full h-full rounded-t-lg"
-                        data-ai-hint="product tobacco accessory"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
+                    {product.storagePath ? (
+                        <AdminProductImage storagePath={product.storagePath} alt={altText} />
                     ) : (
                       <div className="w-full h-full rounded-t-lg bg-muted flex items-center justify-center">
                         <span className="text-muted-foreground">Sem imagem</span>
@@ -210,7 +252,7 @@ export default function ManageProductsPage() {
                         <AlertDialogFooter>
                           <AlertDialogCancel className="border-muted-foreground hover:bg-muted/20">Cancelar</AlertDialogCancel>
                           <AlertDialogAction 
-                            onClick={() => handleDelete(product.id, product.imageUrl, productNameForToast)}
+                            onClick={() => handleDelete(product.id, product.storagePath, productNameForToast)}
                             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                             disabled={isMutating}
                           >

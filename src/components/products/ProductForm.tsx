@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -24,12 +23,12 @@ const productFormSchema = z.object({
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres." }).max(500, { message: "A descrição não pode exceder 500 caracteres." }),
   price: z.coerce.number().positive({ message: "O preço deve ser um número positivo." }).min(0.01, {message: "O preço deve ser maior que zero."}),
   category: z.string().min(1, { message: "Selecione uma categoria." }),
-  imageFile: z.instanceof(File)
+  imageFile: z.instanceof(File, { message: "A imagem do produto é obrigatória." })
     .refine((file) => file.size <= MAX_FILE_SIZE_BYTES, `O tamanho máximo da imagem é ${MAX_FILE_SIZE_MB}MB.`)
     .refine(
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       "Apenas formatos .jpg, .jpeg, .png e .webp são suportados."
-    ).nullable().optional(),
+    ),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -44,18 +43,14 @@ export default function ProductForm() {
       description: "",
       price: undefined,
       category: "",
-      imageFile: null,
+      imageFile: undefined, // Start with undefined
     },
   });
 
   const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
-    if (!data.imageFile) {
-      form.setError("imageFile", { type: "manual", message: "A imagem é obrigatória." });
-      return;
-    }
-    
+    // Schema validation now ensures imageFile is a File object.
     await addProduct(
-      { description: data.description, price: data.price, category: data.category }, // Add category here
+      { description: data.description, price: data.price, category: data.category },
       data.imageFile
     );
     
@@ -78,7 +73,7 @@ export default function ProductForm() {
   }, [imageFile]);
 
   const clearImage = () => {
-    form.setValue("imageFile", null, { shouldValidate: true }); 
+    form.setValue("imageFile", undefined, { shouldValidate: true }); 
     setImagePreview(null);
   };
 
@@ -168,7 +163,7 @@ export default function ProductForm() {
         <FormField
           control={form.control}
           name="imageFile"
-          render={({ field: { onChange, value, ...restField } }) => ( // Ensure value is not passed directly to native input if it's not a string
+          render={({ field: { onChange, value, ...restField } }) => (
             <FormItem>
               <FormLabel className="text-foreground font-headline text-lg">Imagem do Produto</FormLabel>
               <FormControl>
@@ -180,9 +175,9 @@ export default function ProductForm() {
                     id="file-upload"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      onChange(file || null);
+                      onChange(file || undefined);
                     }}
-                    {...restField} // Passes ref, name, onBlur
+                    {...restField}
                   />
                   <Label 
                     htmlFor="file-upload"
